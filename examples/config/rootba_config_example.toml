@@ -1,0 +1,36 @@
+
+[dataset]
+#rotation_sigma = 0.01
+#translation_sigma = 0.01
+#point_sigma = 0.01
+#random_seed = 38401
+init_depth_threshold = 0.1
+#save_output = true
+
+
+[solver]
+#verbosity_level = 2
+#log.save_log_flags = ["UBJSON"]
+
+#staged_execution = false
+use_double = true
+
+#solver_type = "CERES"
+#linear_solver_type = "ITERATIVE_SCHUR"
+#linear_solver_type = "CGNR"
+#preconditioner_type = "JACOBI"
+#use_explicit_schur_complement = true
+
+#optimized_cost = "ERROR"
+#min_linear_solver_iterations = 20
+
+max_num_iterations = 20
+function_tolerance = 1e-6
+
+#residual.robust_norm = "NONE"
+residual.robust_norm = "HUBER"
+residual.huber_parameter = 1.0
+
+
+
+

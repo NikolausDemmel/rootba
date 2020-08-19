@@ -1,0 +1,208 @@
+[options]
+base_path = "$config_dir"
+output_path = "$config_dir/tables/experiments-cvpr"
+cache_dir = "$config_dir/tables/cache"
+show_values_failed_runs = false
+screenread = true
+#overwrite_cache = true
+
+
+################################################################################
+################################################################################
+
+[[experiments]]
+name = "qr_float"
+display_name = "$\\sqrt{BA}$-32 (ours)"
+pattern = "02_cvpr/*/1_*/*qr_float*"
+[[experiments]]
+name = "qr_double"
+display_name = "$\\sqrt{BA}$-64 (ours)"
+pattern = "02_cvpr/*/1_*/*qr_double*"
+[[experiments]]
+name = "sc_float"
+display_name = "explicit-32"
+pattern = "02_cvpr/*/1_*/*sc_float*"
+[[experiments]]
+name = "sc_double"
+display_name = "explicit-64"
+pattern = "02_cvpr/*/1_*/*sc_double*"
+[[experiments]]
+name = "ceres_implicitsc"
+display_name = "ceres-implicit"
+pattern = "02_cvpr/*/2_*/*explicit*"
+[[experiments]]
+name = "ceres_explicitsc"
+display_name = "ceres-explicit"
+pattern = "02_cvpr/*/2_*/*implicit*"
+
+
+################################################################################
+################################################################################
+
+[[substitutions]]
+EXPERIMENTS = [
+    "qr_float",
+    "qr_double",
+    "sc_float",
+    "sc_double",
+    "ceres_implicitsc",
+    "ceres_explicitsc",
+]
+RELATIVE_TO_EXPERIMENT = "ceres_implicitsc"
+
+[[substitutions]]
+TOLERANCES = [1e-1, 1e-2, 1e-3]
+YLIM_TOLERANCE_TOP = 1.75
+YLIM_TOLERANCE_BOTTOM = -0.1
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "cvpr paper plots"
+pagewidth = "30cm"
+show = true
+
+[[results]]
+show = true
+class = "plot"
+type = "performance_profile"
+name = "all"
+#filter_regex = "trafalgar|dubrovnik|venice|final"
+reverse_zorder = true
+experiments = "<EXPERIMENTS>"
+tolerances = "<TOLERANCES>"
+xlimits.right = [10,15,15]
+
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -0.04
+xlim_time.right = 2.0
+reverse_zorder = true
+title = "ladybug138"
+sequence = "ladybug138"
+experiments = "<EXPERIMENTS>"
+
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -0.12
+xlim_time.right = 6
+reverse_zorder = true
+title = "trafalgar170"
+sequence = "trafalgar170"
+experiments = "<EXPERIMENTS>"
+
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -1.6
+xlim_time.right = 80
+reverse_zorder = true
+title = "venice1158"
+sequence = "venice1158"
+experiments = "<EXPERIMENTS>"
+
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -20
+xlim_time.right = 1000
+reverse_zorder = true
+title = "final4585"
+sequence = "final4585"
+experiments = "<EXPERIMENTS>"
+
+[[results]]
+show = true
+class = "plot"
+type = "memory"
+#legend_loc = false
+problem_size_variants = ["obs"]
+figsize = [5,3]
+best_fit_line = false
+reverse_zorder = true
+name = "ladybug"
+filter_regex = "ladybug"
+experiments = "<EXPERIMENTS>"
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "performance profiles as seperate plots for poster"
+pagewidth = "30cm"
+show = true
+
+[[results]]
+show = true
+class = "plot"
+type = "performance_profile"
+name = "all_tau1em1"
+reverse_zorder = true
+experiments = "<EXPERIMENTS>"
+tolerances = [1e-1]
+xlimits.right = [10]
+
+[[results]]
+show = true
+class = "plot"
+type = "performance_profile"
+name = "all_tau1em2"
+reverse_zorder = true
+experiments = "<EXPERIMENTS>"
+tolerances = [1e-2]
+xlimits.right = [15]
+
+[[results]]
+show = true
+class = "plot"
+type = "performance_profile"
+name = "all_tau1em3"
+reverse_zorder = true
+experiments = "<EXPERIMENTS>"
+tolerances = [1e-3]
+xlimits.right = [15]
+

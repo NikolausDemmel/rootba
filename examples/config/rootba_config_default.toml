@@ -1,0 +1,61 @@
+
+[dataset]
+input = ""
+input_type = "AUTO"
+save_output = false
+output_optimized_path = "optimized.cereal"
+normalize = true
+normalization_scale = 100.0
+rotation_sigma = 0.0
+translation_sigma = 0.0
+point_sigma = 0.0
+random_seed = 38401
+init_depth_threshold = 0.0
+quiet = false
+
+[solver]
+solver_type = "SQUARE_ROOT"
+verbosity_level = 2
+debug = false
+num_threads = 0
+optimized_cost = "ERROR"
+max_num_iterations = 20
+min_relative_decrease = 0.0
+initial_trust_region_radius = 10000.0
+min_trust_region_radius = 1e-32
+max_trust_region_radius = 1e+16
+min_lm_diagonal = 1e-06
+max_lm_diagonal = 1e+32
+min_linear_solver_iterations = 0
+max_linear_solver_iterations = 500
+eta = 0.1
+jacobi_scaling = true
+jacobi_scaling_epsilon = 0.0
+preconditioner_type = "SCHUR_JACOBI"
+linear_solver_type = "ITERATIVE_SCHUR"
+use_explicit_schur_complement = false
+function_tolerance = 1e-06
+gradient_tolerance = 0.0
+parameter_tolerance = 0.0
+check_gradients = false
+gradient_check_relative_precision = 1e-08
+gradient_check_numeric_derivative_relative_step_size = 1e-06
+use_double = true
+use_householder_marginalization = true
+staged_execution = true
+reduction_alg = 0
+initial_vee = 2.0
+vee_factor = 2.0
+
+[solver.residual]
+robust_norm = "NONE"
+huber_parameter = 1.0
+
+[solver.log]
+log_path = "ba_log.json"
+save_log_flags = [
+"JSON",
+]
+disable_all = false
+
+

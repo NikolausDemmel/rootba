@@ -1,0 +1,179 @@
+[options]
+base_path = "$config_dir"
+output_path = "$config_dir/tables/experiments-cvpr-supplementary"
+cache_dir = "$config_dir/tables/cache"
+show_values_failed_runs = false
+screenread = true
+#overwrite_cache = true
+import_experiments = ["$config_dir/experiments-cvpr.toml"]
+
+
+################################################################################
+################################################################################
+
+[[substitutions]]
+EXPERIMENTS = [
+    "qr_float",
+    "qr_double",
+    "sc_float",
+    "sc_double",
+    "ceres_implicitsc",
+    "ceres_explicitsc",
+]
+RELATIVE_TO_EXPERIMENT = "ceres_implicitsc"
+
+[[substitutions]]
+TOLERANCES = [1e-1, 1e-2, 1e-3]
+
+
+ALL_LADYBUG_SEQUENCES = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646", "ladybug707", "ladybug783", "ladybug810", "ladybug856", "ladybug885", "ladybug931", "ladybug969", "ladybug1064", "ladybug1118", "ladybug1152", "ladybug1197", "ladybug1235", "ladybug1266", "ladybug1340", "ladybug1469", "ladybug1514", "ladybug1587", "ladybug1642", "ladybug1695", "ladybug1723"]
+
+ALL_TRAFALGAR_SEQUENCES = ["trafalgar21", "trafalgar39", "trafalgar50", "trafalgar126", "trafalgar138", "trafalgar161", "trafalgar170", "trafalgar174", "trafalgar193", "trafalgar201", "trafalgar206", "trafalgar215", "trafalgar225", "trafalgar257"]
+
+ALL_DUBROVNIK_SEQUENCES = ["dubrovnik16", "dubrovnik88", "dubrovnik135", "dubrovnik142", "dubrovnik150", "dubrovnik161", "dubrovnik173", "dubrovnik182", "dubrovnik202", "dubrovnik237", "dubrovnik253", "dubrovnik262", "dubrovnik273", "dubrovnik287", "dubrovnik308", "dubrovnik356"]
+
+ALL_VENICE_SEQUENCES = ["venice52", "venice89", "venice245", "venice427", "venice744", "venice951", "venice1102", "venice1158", "venice1184", "venice1238", "venice1288", "venice1350", "venice1408", "venice1425", "venice1473", "venice1490", "venice1521", "venice1544", "venice1638", "venice1666", "venice1672", "venice1681", "venice1682", "venice1684", "venice1695", "venice1696", "venice1706", "venice1776", "venice1778"]
+
+ALL_FINAL_SEQUENCES = ["final93", "final394", "final871", "final961", "final1936", "final3068", "final4585", "final13682"]
+
+
+ALL_SEQUENCES = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646", "ladybug707", "ladybug783", "ladybug810", "ladybug856", "ladybug885", "ladybug931", "ladybug969", "ladybug1064", "ladybug1118", "ladybug1152", "ladybug1197", "ladybug1235", "ladybug1266", "ladybug1340", "ladybug1469", "ladybug1514", "ladybug1587", "ladybug1642", "ladybug1695", "ladybug1723","trafalgar21", "trafalgar39", "trafalgar50", "trafalgar126", "trafalgar138", "trafalgar161", "trafalgar170", "trafalgar174", "trafalgar193", "trafalgar201", "trafalgar206", "trafalgar215", "trafalgar225", "trafalgar257", "dubrovnik16", "dubrovnik88", "dubrovnik135", "dubrovnik142", "dubrovnik150", "dubrovnik161", "dubrovnik173", "dubrovnik182", "dubrovnik202", "dubrovnik237", "dubrovnik253", "dubrovnik262", "dubrovnik273", "dubrovnik287", "dubrovnik308", "dubrovnik356", "venice52", "venice89", "venice245", "venice427", "venice744", "venice951", "venice1102", "venice1158", "venice1184", "venice1238", "venice1288", "venice1350", "venice1408", "venice1425", "venice1473", "venice1490", "venice1521", "venice1544", "venice1638", "venice1666", "venice1672", "venice1681", "venice1682", "venice1684", "venice1695", "venice1696", "venice1706", "venice1776", "venice1778", "final93", "final394", "final871", "final961", "final1936", "final3068", "final4585", "final13682"]
+
+
+## Smaller subset for testing:
+#CONVERGENCE_LADYBUG_SEQUENCES = ["ladybug73", "ladybug539", "ladybug1723"]
+#CONVERGENCE_TRAFALGAR_SEQUENCES = ["trafalgar126", "trafalgar170", "trafalgar257"]
+#CONVERGENCE_DUBROVNIK_SEQUENCES = ["dubrovnik88", "dubrovnik173", "dubrovnik356"]
+#CONVERGENCE_VENICE_SEQUENCES = ["venice89", "venice744", "venice1778"]
+#CONVERGENCE_FINAL_SEQUENCES = ["final93", "final394", "final871", "final4585"]
+
+## Results for all sequences
+CONVERGENCE_LADYBUG_SEQUENCES = "<ALL_LADYBUG_SEQUENCES>"
+CONVERGENCE_TRAFALGAR_SEQUENCES = "<ALL_TRAFALGAR_SEQUENCES>"
+CONVERGENCE_DUBROVNIK_SEQUENCES = "<ALL_DUBROVNIK_SEQUENCES>"
+CONVERGENCE_VENICE_SEQUENCES = "<ALL_VENICE_SEQUENCES>"
+CONVERGENCE_FINAL_SEQUENCES = "<ALL_FINAL_SEQUENCES>"
+
+
+################################################################################
+################################################################################
+
+[[templates]]
+_name = "SUMMARIZE_SEQUENCE_TABLE"
+_arguments = ["NAME", "FILTER_REGEX"]
+class = "summarize_sequences_table"
+name = "(relative) metrics averaged over ${NAME} problems"
+filter_regex = "<FILTER_REGEX>"
+experiments = "<EXPERIMENTS>"
+metrics = "<SUMMARY_METRICS>"
+
+[[templates]]
+_name = "CONVERGENCE"
+_arguments = ["SEQUENCE"]
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+sequence = "<SEQUENCE>"
+experiments = "<EXPERIMENTS>"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+#bal_cost_include = ["cost_time"]
+plot_cost_semilogy = true
+ylim_tolerance.bottom = -0.1
+ylim_tolerance.top = 1.75
+xlim_time_fastest.right = 1
+xlim_time_fastest.left = -0.02
+reverse_zorder = true
+#figsize = [16.0, 2.7]  # <-- this is good with no "suptitle"
+figsize = [16.0, 3.0]
+suptitle = "${SEQUENCE}"
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "problem info"
+pagewidth = "30cm"
+show = true
+
+[[results]]
+class = "overview_table"
+name = "Problem size"
+export_latex = "problem_size"
+columns = [
+    { name = "<RELATIVE_TO_EXPERIMENT>", metrics = ["#cam", "#lm", "#obs", "#obs-per-cam", "#obs-per-lm-mean", "#obs-per-lm-stddev", "#obs-per-lm-max"] },
+]
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "convergence ladybug"
+show = true
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<CONVERGENCE_LADYBUG_SEQUENCES>"}
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "convergence trafalgar"
+show = true
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<CONVERGENCE_TRAFALGAR_SEQUENCES>"}
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "convergence dubrovnik"
+show = true
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<CONVERGENCE_DUBROVNIK_SEQUENCES>"}
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "convergence venice"
+show = true
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<CONVERGENCE_VENICE_SEQUENCES>"}
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "convergence final"
+show = true
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<CONVERGENCE_FINAL_SEQUENCES>"}
+
+
+
+
+
+
+
+

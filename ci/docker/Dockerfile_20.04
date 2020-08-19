@@ -1,0 +1,78 @@
+FROM ubuntu:20.04
+
+# non-persistent environment variables
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Basic packages
+RUN apt-get update && apt-get install -y \
+    apt-utils \
+    apt-transport-https \
+    software-properties-common \
+    locales \
+    wget \
+    curl
+
+# Set the locale
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+# PPAs
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - && \
+    apt-add-repository -y "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-10 main" && \
+    apt-add-repository -y "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-11 main" && \
+    apt-add-repository -y "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-12 main" && \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/ppa
+
+# updates from toolchain and clang repo
+RUN apt-get update && apt-get dist-upgrade -y
+
+# Install base C++ dev tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    clang-10 \
+    clang-11 \
+    clang-12 \
+    g++-9 \
+    g++-10 \
+    libc++-dev \
+    clang-format-11 \
+    clang-tidy-11 \
+    clang-format-12 \
+    clang-tidy-12 \
+    cmake \
+    pkg-config \
+    git-core \
+    git-lfs \
+    ccache
+
+# Python
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    libpython3-all-dev
+RUN pip3 install -U pip setuptools
+RUN pip3 install -U cmake cmake_format
+RUN pip3 install -U yapf
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Install libraries
+RUN apt-get update && apt-get install -y \
+    libgoogle-glog-dev \
+    libgflags-dev \
+    libtbb-dev \
+    libeigen3-dev \
+    libatlas-base-dev \
+    libsuitesparse-dev \
+    libglew-dev \
+    ffmpeg \
+    libavcodec-dev \
+    libavutil-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libavdevice-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff5-dev \
+    libopenexr-dev

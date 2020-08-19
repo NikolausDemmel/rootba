@@ -1,0 +1,90 @@
+name: Build and Test
+
+on: push
+
+jobs:
+  build-ubuntu:
+    name: Build for Ubuntu
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os_version: [20.04]
+        build_type: [CiRelWithDebInfo]
+        extra_command: [true]
+#        include:
+#        - os_version: 20.04
+#          build_type: CiRelWithDebInfo
+#          extra_command: cd .. && ./scripts/clang-tidy-all.sh
+      fail-fast: false
+    container:
+      image: docker.pkg.github.com/nikolausdemmel/rootba_testing/ubuntu-ci-rootba:${{ matrix.os_version }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      CXX_MARCH: sandybridge
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+        with:
+          #lfs: true
+          submodules: recursive
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ubuntu-${{ matrix.os_version }}-${{ matrix.build_type }}
+      - name: build code
+        shell: bash
+        run: |
+          cmake --version
+          source ./ci/scripts/install-dependencies.sh
+          time ./scripts/build-external.sh ${{ matrix.build_type }}
+          time ./scripts/build-rootba.sh ${{ matrix.build_type }}
+          cd build && ctest --output-on-failure
+          ${{ matrix.extra_command }}
+
+  build-mac:
+    name: Build for MacOS
+    runs-on: macos-${{ matrix.os_version }}
+    strategy:
+      matrix:
+        os_version: [10.15]
+        build_type: [CiRelWithDebInfo]
+      fail-fast: false
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+        with:
+          #lfs: true
+          submodules: recursive
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: macos-${{ matrix.os_version }}-${{ matrix.build_type }}
+      - name: build code
+        shell: bash
+        run: |
+          brew install cmake glog gflags tbb suitesparse glew ffmpeg libjpeg libpng libtiff
+          cmake --version
+          source ./ci/scripts/install-dependencies.sh
+          time ./scripts/build-external.sh ${{ matrix.build_type }}
+          time ./scripts/build-rootba.sh ${{ matrix.build_type }}
+          cd build && ctest --output-on-failure
+
+  source-format:
+    name: Check Source format
+    runs-on: ubuntu-latest
+    container:
+      image: docker.pkg.github.com/nikolausdemmel/rootba_testing/ubuntu-ci-rootba:20.04
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Check source format
+        shell: bash
+        run: |
+          ./scripts/clang-format-all.sh
+          ./scripts/yapf-all.sh
+          (if [ -n "`git diff --name-only --diff-filter=M --ignore-submodules`" ]; then echo $'\n    Some files are not properly formatted. You can use "./scripts/clang-format-all.sh".\n'; git diff --diff-filter=M; false; fi)

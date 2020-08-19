@@ -1,0 +1,18 @@
+cmake-build*
+.idea
+CMakeLists.txt.user
+/build
+/build-*
+/build_*
+/bin
+/external/build
+external/install*
+ba_log.json
+ba_log.ubjson
+__pycache__
+/*.cereal
+/rootba_config.toml
+
+# generic:
+.DS_Store
+*~

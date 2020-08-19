@@ -1,0 +1,31 @@
+Language:       Cpp
+BasedOnStyle:   Google
+Standard:       Cpp11
+
+IndentWidth:    2
+ColumnLimit:    80
+
+# force the alignment of pointer/reference declarations
+DerivePointerAlignment: false
+PointerAlignment:       Left
+
+# group header blocks
+IncludeBlocks:   Regroup
+IncludeCategories:
+  # rootba headers
+  - Regex:           '^"rootba.*\.hpp"'
+    Priority:        4
+  # external libraries
+  - Regex:           '^<.*/.*>'
+    Priority:        3
+  # standard C headers
+  - Regex:           '^<.*\.h>'
+    Priority:        2
+  # standard STL headers
+  - Regex:           '^<.*'
+    Priority:        1
+  # leftover
+  - Regex:           '.*'
+    Priority:        5
+IncludeIsMainRegex: '([-_.](test|unittest))?$'
+IncludeIsMainSourceRegex: ''

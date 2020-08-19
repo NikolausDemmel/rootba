@@ -1,0 +1,10 @@
+target_sources(rootba
+   PUBLIC
+     enum_ref.hpp
+     flags_ref.hpp
+     options_interface.hpp
+     visitable_options.hpp
+     wise_enum_ref.hpp
+   PRIVATE
+     options_interface.cpp
+)

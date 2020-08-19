@@ -1,0 +1,50 @@
+[submodule "data/rootba"]
+	path = data/rootba
+	url = https://github.com/NikolausDemmel/rootba_test_data.git
+[submodule "external/Sophus"]
+	path = external/Sophus
+	url = https://github.com/strasdat/Sophus.git
+[submodule "external/eigen"]
+	path = external/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "external/Pangolin"]
+	path = external/Pangolin
+#	url = https://github.com/stevenlovegrove/Pangolin.git
+	url = https://github.com/NikolausDemmel/Pangolin.git
+[submodule "external/cereal"]
+	path = external/cereal
+	url = https://github.com/USCiLab/cereal.git
+[submodule "external/visit_struct"]
+	path = external/visit_struct
+#	url = https://github.com/cbeck88/visit_struct.git
+	url = https://github.com/NikolausDemmel/visit_struct.git
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "external/basalt-headers"]
+	path = external/basalt-headers
+	url = https://gitlab.com/VladyslavUsenko/basalt-headers.git
+[submodule "external/abseil-cpp"]
+	path = external/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+[submodule "external/clipp/clipp"]
+	path = external/clipp/clipp
+	url = https://github.com/muellan/clipp.git
+[submodule "external/ceres-solver"]
+	path = external/ceres-solver
+	url = https://github.com/ceres-solver/ceres-solver.git
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest.git
+[submodule "external/wise_enum/wise_enum"]
+	path = external/wise_enum/wise_enum
+	url = https://github.com/quicknir/wise_enum.git
+[submodule "external/enum-flags"]
+	path = external/enum-flags
+	url = https://github.com/grisumbras/enum-flags.git
+[submodule "external/toml11/toml11"]
+	path = external/toml11/toml11
+	url = https://github.com/ToruNiina/toml11.git
+[submodule "external/nameof/nameof"]
+	path = external/nameof/nameof
+	url = https://github.com/Neargye/nameof.git
