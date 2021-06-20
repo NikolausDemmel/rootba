@@ -297,12 +297,11 @@ option `OPTION` to a value of `VALUE`, add the command line argument
 - `ROOTBA_ENABLE_TESTING`: Build unit tests. Default: `ON`
 - `ROOTBA_INSTANTIATIONS_DOUBLE`: Instantiate templates with `Scalar =
   double`. If disabled, running with config option `use_double = true`
-  will cause a runtime error, the Ceres solver will not be available,
-  nor will the executables `bal`, `bal_gui`, `bal_ceres` be
-  available. But, disabling it may reduce compile times and memory
-  consumption during compilation significantly. While developing, we
-  recommend leaving only one of `ROOTBA_INSTANTIONS_DOUBLE` or
-  `ROOTBA_INSTANTIATIONS_FLOAT` enabled, not both. Default: `ON`
+  will cause a runtime error. But, disabling it may reduce compile
+  times and memory consumption during compilation significantly. While
+  developing, we recommend leaving only one of
+  `ROOTBA_INSTANTIONS_DOUBLE` or `ROOTBA_INSTANTIATIONS_FLOAT`
+  enabled, not both. Default: `ON`
 - `ROOTBA_INSTANTIATIONS_FLOAT`: Instantiate templates with `Scalar =
   float`. If disabled, running with config option `use_double = false`
   will cause a runtime error. But, disabling it may reduce compile

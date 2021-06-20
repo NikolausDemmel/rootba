@@ -657,14 +657,6 @@ std::string BalProblem<Scalar>::stats_to_string() const {
                    int(summary.per_lm_obs.min), int(summary.per_lm_obs.max));
 }
 
-#ifdef ROOTBA_INSTANTIATIONS_FLOAT
-template class BalProblem<float>;
-#endif
-
-#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
-template class BalProblem<double>;
-#endif
-
 template <class Scalar>
 BalProblem<Scalar> load_normalized_bal_problem(
     const BalDatasetOptions& options, DatasetSummary* dataset_summary,
@@ -763,6 +755,8 @@ BalProblem<Scalar> load_normalized_bal_problem_quiet(const std::string& path) {
 }
 
 #ifdef ROOTBA_INSTANTIATIONS_FLOAT
+template class BalProblem<float>;
+
 template BalProblem<float> load_normalized_bal_problem<float>(
     const BalDatasetOptions& options, DatasetSummary* dataset_summary,
     PipelineTimingSummary* timing_summary);
@@ -775,7 +769,11 @@ template BalProblem<float> load_normalized_bal_problem_quiet<float>(
     const std::string& path);
 #endif
 
-#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+// BalProblem in double is used by the ceres solver and GUI, so always
+// compile it; it should not be a big compilation overhead.
+//#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+template class BalProblem<double>;
+
 template BalProblem<double> load_normalized_bal_problem<double>(
     const BalDatasetOptions& options, DatasetSummary* dataset_summary,
     PipelineTimingSummary* timing_summary);
@@ -786,6 +784,6 @@ template BalProblem<double> load_normalized_bal_problem<double>(
 
 template BalProblem<double> load_normalized_bal_problem_quiet<double>(
     const std::string& path);
-#endif
+//#endif
 
 }  // namespace rootba

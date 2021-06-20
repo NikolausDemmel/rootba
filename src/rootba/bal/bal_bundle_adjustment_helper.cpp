@@ -152,8 +152,10 @@ bool BalBundleAdjustmentHelper<Scalar>::linearize_point(
 template class BalBundleAdjustmentHelper<float>;
 #endif
 
-#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+// The helper in double is used by the ceres iteration callback, so always
+// compile it; it should not be a big compilation overhead.
+//#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
 template class BalBundleAdjustmentHelper<double>;
-#endif
+//#endif
 
 }  // namespace rootba

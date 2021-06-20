@@ -9,17 +9,14 @@
 #  message(STATUS "${IPO_OUTPUT}")
 #endif()
 
+add_executable(bal bal.cpp)
+target_link_libraries(bal rootba_solver rootba_ceres rootba_cli)
 
-if(ROOTBA_INSTANTIATIONS_DOUBLE)
-  add_executable(bal bal.cpp)
-  target_link_libraries(bal rootba_solver rootba_ceres rootba_cli)
+add_executable(bal_gui bal_gui.cpp)
+target_link_libraries(bal_gui rootba_pangolin rootba_solver rootba_ceres rootba_cli)
 
-  add_executable(bal_ceres bal_ceres.cpp)
-  target_link_libraries(bal_ceres rootba_ceres rootba_cli)
-
-  add_executable(bal_gui bal_gui.cpp)
-  target_link_libraries(bal_gui rootba_pangolin rootba_solver rootba_ceres rootba_cli)
-endif()
+add_executable(bal_ceres bal_ceres.cpp)
+target_link_libraries(bal_ceres rootba_ceres rootba_cli)
 
 add_executable(bal_qr bal_qr.cpp)
 target_link_libraries(bal_qr rootba_solver rootba_cli)

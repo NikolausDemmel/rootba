@@ -83,13 +83,29 @@ int main(int argc, char** argv) {
   pangolin::Var<double> cam_size("ui.cam_size", 1.5, 0.5, 5);
 
   Button optimize_ceres("ui.optimize", [&]() {
+    // print options
+    if (options.solver.verbosity_level >= 2) {
+      LOG(INFO) << "Options:\n" << options;
+    }
+
     if (options.solver.solver_type == SolverOptions::SolverType::CERES) {
       bundle_adjust_ceres(bal_problem, options.solver);
     } else {
       if (!options.solver.use_double) {
-        LOG(WARNING) << "GUI currently only supports double, not float.";
+#ifdef ROOTBA_INSTANTIATIONS_FLOAT
+        BalProblem<float> bal_problem_tmp = bal_problem.copy_cast<float>();
+        bundle_adjust_manual(bal_problem_tmp, options.solver);
+        bal_problem = bal_problem_tmp.copy_cast<double>();
+#else
+        LOG(FATAL) << "Compiled without float support.";
+#endif
+      } else {
+#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+        bundle_adjust_manual(bal_problem, options.solver);
+#else
+        LOG(FATAL) << "Compiled without double support.";
+#endif
       }
-      bundle_adjust_manual(bal_problem, options.solver);
     }
     bal_problem.postprocress(options.dataset);
     bal_state_changed = true;
