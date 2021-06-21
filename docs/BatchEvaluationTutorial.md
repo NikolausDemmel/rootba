@@ -112,7 +112,13 @@ While the experiments are running, you can optionally check the
 status. In a second terminal, run:
 
 ```
-$ ./scripts/list-jobs.sh ../rootba_experiments/01_tutorial/
+./scripts/list-jobs.sh ../rootba_experiments/01_tutorial/
+```
+
+You should see output such as the following, indicating the completed,
+running, and not yet started runs:
+
+```
 ../rootba_experiments/01_tutorial/20210619-024332/1_rootba_qr/it20_rootbaqr_double_ladybug138 : completed
 ../rootba_experiments/01_tutorial/20210619-024332/1_rootba_qr/it20_rootbaqr_double_ladybug318 : completed
 ../rootba_experiments/01_tutorial/20210619-024332/1_rootba_qr/it20_rootbaqr_double_ladybug372 : completed
@@ -121,9 +127,9 @@ $ ./scripts/list-jobs.sh ../rootba_experiments/01_tutorial/
 [...]
 ```
 
-As you can see, the experimental runs are placed in a subfolder with
-the current date and time and each of the configs gets it's own
-subfolder within.
+Moreover, as you can see in the output, the experimental runs are
+placed in a subfolder with the current date and time and each of the
+configs gets it's own subfolder within.
 
 ## Generating results tables and plots
 
