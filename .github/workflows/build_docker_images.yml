@@ -10,14 +10,19 @@ jobs:
       packages: write
       contents: read
     env:
-      IMAGE: "docker.pkg.github.com/nikolausdemmel/rootba/ubuntu-ci-rootba"
+      IMAGE: "ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build docker images
         shell: bash
         run: |
-          docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} docker.pkg.github.com
           cd ci/docker
           for tag in 18.04 20.04; do
             # fetches the latest image for cache (not failing if image is not found)

@@ -4,47 +4,43 @@ on: push
 
 jobs:
   build-ubuntu:
-    name: Build for Ubuntu
+    name: build for Ubuntu
     runs-on: ubuntu-latest
     strategy:
       matrix:
         os_version: [20.04]
         build_type: [CiRelWithDebInfo]
-        extra_command: [true]
-#        include:
-#        - os_version: 20.04
-#          build_type: CiRelWithDebInfo
-#          extra_command: cd .. && ./scripts/clang-tidy-all.sh
       fail-fast: false
     container:
-      image: docker.pkg.github.com/nikolausdemmel/rootba_testing/ubuntu-ci-rootba:${{ matrix.os_version }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      image: ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba:${{ matrix.os_version }}
     env:
       CXX_MARCH: sandybridge
     steps:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-          #lfs: true
           submodules: recursive
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ubuntu-${{ matrix.os_version }}-${{ matrix.build_type }}
-      - name: build code
+      - name: install dependencies
         shell: bash
         run: |
-          cmake --version
           source ./ci/scripts/install-dependencies.sh
-          time ./scripts/build-external.sh ${{ matrix.build_type }}
-          time ./scripts/build-rootba.sh ${{ matrix.build_type }}
-          cd build && ctest --output-on-failure
-          ${{ matrix.extra_command }}
+          cmake --version
+      - name: build external
+        shell: bash
+        run: time ./scripts/build-external.sh ${{ matrix.build_type }}
+      - name: build rootba
+        shell: bash
+        run: time ./scripts/build-rootba.sh ${{ matrix.build_type }}
+      - name: run tests
+        shell: bash
+        run: cd build && ctest --output-on-failure
 
   build-mac:
-    name: Build for MacOS
+    name: build for macOS
     runs-on: macos-${{ matrix.os_version }}
     strategy:
       matrix:
@@ -55,36 +51,61 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-          #lfs: true
           submodules: recursive
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: macos-${{ matrix.os_version }}-${{ matrix.build_type }}
-      - name: build code
+      - name: install dependencies
         shell: bash
         run: |
           brew install cmake glog gflags tbb suitesparse glew ffmpeg libjpeg libpng libtiff
           cmake --version
-          source ./ci/scripts/install-dependencies.sh
-          time ./scripts/build-external.sh ${{ matrix.build_type }}
-          time ./scripts/build-rootba.sh ${{ matrix.build_type }}
-          cd build && ctest --output-on-failure
+      - name: build external
+        shell: bash
+        run: time ./scripts/build-external.sh ${{ matrix.build_type }}
+      - name: build rootba
+        shell: bash
+        run: time ./scripts/build-rootba.sh ${{ matrix.build_type }}
+      - name: run unit tests
+        shell: bash
+        run: cd build && ctest --output-on-failure
 
   source-format:
-    name: Check Source format
+    name: check source format
     runs-on: ubuntu-latest
     container:
-      image: docker.pkg.github.com/nikolausdemmel/rootba_testing/ubuntu-ci-rootba:20.04
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      image: ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba:20.04
     steps:
-      - name: Checkout code
+      - name: checkout code
         uses: actions/checkout@v2
-      - name: Check source format
+      - name: check source format
         shell: bash
         run: |
           ./scripts/clang-format-all.sh
           ./scripts/yapf-all.sh
           (if [ -n "`git diff --name-only --diff-filter=M --ignore-submodules`" ]; then echo $'\n    Some files are not properly formatted. You can use "./scripts/clang-format-all.sh".\n'; git diff --diff-filter=M; false; fi)
+
+  clang-tidy:
+    if: false # takes a long time; skip for now...
+    name: check code style
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba:20.04
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: ubuntu-20.04-CiRelWithDebInfo
+      - name: build external
+        shell: bash
+        run: time ./scripts/build-external.sh CiRelWithDebInfo
+      - name: clang tidy
+        shell: bash
+        run: |
+          cmake . -B build -DCMAKE_BUILD_TYPE=CiRelWithDebInfo
+          ./scripts/clang-tidy-all.sh
