@@ -339,7 +339,7 @@ ctest
 In the ["Bundle Adjustment in the Large"
 (BAL)](https://grail.cs.washington.edu/projects/bal/) problem
 formulation cameras are represented as world-to-cam poses and points
-as 3D points in world frame, and each camera has it's own set of
+as 3D points in world frame, and each camera has its own set of
 independent intrinsics, using the "Snavely projection" function with
 one focal length `f` and two radial distortion parameters `k1` and
 `k2`.  This is implemented in the `BalProblem` class. Besides the BAL
