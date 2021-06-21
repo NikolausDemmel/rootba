@@ -152,8 +152,6 @@ BUILD_ABSEIL=external/build$EXTERNAL_BUILD_DIR_SUFFIX/abseil-cpp
 BUILD_CERES=external/build$EXTERNAL_BUILD_DIR_SUFFIX/ceres-solver
 
 COMMON_CMAKE_ARGS=(
-    -DCMAKE_C_COMPILER_LAUNCHER=ccache
-    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
     -DCMAKE_CXX_FLAGS="$EXTRA_CXX_FLAGS"
     -DCMAKE_EXE_LINKER_FLAGS="$EXTRA_LINKER_FLAGS"
@@ -167,6 +165,17 @@ COMMON_CMAKE_ARGS=(
     -DCMAKE_PREFIX_PATH="$INSTALL_PREFIX"
 )
 
+# check if ccache is available
+if command -v ccache >/dev/null 2>&1; then
+    echo "Found ccache: `command -v ccache`"
+    COMMON_CMAKE_ARGS=(
+        -DCMAKE_C_COMPILER_LAUNCHER=ccache
+        -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        "${COMMON_CMAKE_ARGS[@]}"
+    )
+else
+    echo "Didn't find ccache. Compiling without."
+fi
 
 # TODO: configure shallow clone...
 git submodule sync --recursive
