@@ -154,7 +154,7 @@ sudo apt install \
 To get a recent version of cmake you can easily install it from pip.
 
 ```
-sudo apt python3-pip
+sudo apt install python3-pip
 python3 -m pip install --user -U cmake
 
 # put this in your .bashrc to ensure cmake from pip is found
@@ -361,8 +361,12 @@ data/rootba/bal/ladybug/problem-49-7776-pre.txt
 data/rootba/bal/final/problem-93-61203-pre.txt
 ```
 
-Additionally, we provide a mirror of some publicly available datasets:
-https://gitlab.vision.in.tum.de/rootba/rootba_data
+We moreover include a `download-bal-problems.sh` script to
+convenitently download the BAL datasets. See the [batch evaluation
+tutorial](#batch-evaluation) below for more details.
+
+Additionally, we provide a mirror of BAL and some additional publicly
+available datasets: https://gitlab.vision.in.tum.de/rootba/rootba_data
 
 Please refer to the README files in the corresponding folders of that
 repository for further details on the data source, licensing and any

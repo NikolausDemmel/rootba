@@ -64,8 +64,19 @@ the format and how to modify it for your needs.
 If you check the definition of data sources for the different
 sequences in the `rootba_batch_config.toml` file, you see that we
 expect the test data to be in a folder `../rootba_data/`. The easiest
-way to get the test data is using our mirror git LFS
-repository. First, make sure to that git LFS is [installed and
+way to get the test data is using our downloader script.
+
+```
+./scripts/download-bal-problems.sh tutorial
+```
+
+With the argument `tutorial` it only downloads the 10 sequences needed
+for the tutorial. You can also pass `all`, which then downloads all 97
+sequences.
+
+If you are planning to try out additional datasets, it might also be
+convenient to use our mirror git LFS repository instead of the
+downloader script. First, make sure to that git LFS is [installed and
 enabled](https://git-lfs.github.com/). Then, you can download the
 datasets with:
 
@@ -74,18 +85,8 @@ cd ..
 git clone https://gitlab.vision.in.tum.de/rootba/rootba_data.git
 ```
 
-However, this downloads all datasets at once, which amounts to around
-**15GB**. If that is too slow for your connection, you can also
-manually download the required sequences either from the mirror
-repository or from the orginial website:
-https://grail.cs.washington.edu/projects/bal/
-
-For the tutorial you need the following sequences: "ladybug49",
-"ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412",
-"ladybug460", "ladybug539", "ladybug598", "ladybug646". They need to
-be put in the folder `../rootba_data/bal/ladybug/`. For the exact
-expected filenames, please refer to the `rootba_batch_config.toml`
-file.
+However, this downloads all datasets at once and uncompressed, which
+amounts to around **15GB**.
 
 ## Running experiments
 
@@ -184,11 +185,13 @@ Then we can generate configurations:
 ```
 
 Second, make sure you have all BAL dataset in the
-`../rootba_data/bal/` folder, organized in subfolders. As explained
-above, the easiest is to get with git LFS from our dataset mirror. If
-you manually download them, make sure the folder structure is as
-referenced in the `rootba_batch_config.toml` file (or adjust the
-config file accordingly).
+`../rootba_data/bal/` folder, organized in subfolders. If you used the
+downloader script to download only the tutorial sequences above, you
+need to now get the rest.
+
+```
+./scripts/download-bal-problems.sh all
+```
 
 Third, run the experiments:
 
