@@ -97,7 +97,7 @@ e.g. from a system-wide install:
 
 Python dependencies are needed for scripts and tools to generate
 config files, run experiments, plot results, etc. For generating
-results tables and plots you additionally need `latexmk` and a LaTeX
+result tables and plots you additionally need `latexmk` and a LaTeX
 distribution.
 
 **Developer Tools**
@@ -168,7 +168,7 @@ installed via pip.
 python3 -m pip install --user -U py_ubjson matplotlib numpy munch scipy pylatex toml
 ```
 
-For generatign results tables and plots you additionally need
+For generating result tables and plots you additionally need
 `latexmk` and a LaTeX distribution.
 
 ```
@@ -215,7 +215,7 @@ brew install python
 python3 -m pip install --user -U py_ubjson matplotlib numpy munch scipy pylatex toml
 ```
 
-For generating results tables and plots you additionally need
+For generating result tables and plots you additionally need
 `latexmk` and a LaTeX distribution.
 
 ```
