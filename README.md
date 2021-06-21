@@ -362,7 +362,7 @@ data/rootba/bal/final/problem-93-61203-pre.txt
 ```
 
 We moreover include a `download-bal-problems.sh` script to
-convenitently download the BAL datasets. See the [batch evaluation
+conveniently download the BAL datasets. See the [batch evaluation
 tutorial](#batch-evaluation) below for more details.
 
 Additionally, we provide a mirror of BAL and some additional publicly
