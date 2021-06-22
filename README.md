@@ -8,6 +8,26 @@
 
 <img src="docs/images/teaser.jpg" alt="teaser image" />
 
+## Table of Contents
+
+* [Citation](#citation)
+* [Dependencies](#dependencies)
+  * [Installing dependencies on Linux](#installing-dependencies-on-linux)
+  * [Installing depedencies on macOS](#installing-depedencies-on-macos)
+* [Building](#building)
+  * [CMake Options](#cmake-options)
+  * [Running Unit Tests](#running-unit-tests)
+* [BAL Problems](#bal-problems)
+* [Testing Bundle Adjustment](#testing-bundle-adjustment)
+  * [Visualization of BAL Problems](#visualization-of-bal-problems)
+  * [Running Bundle Adjustment](#running-bundle-adjustment)
+  * [Config Options](#config-options)
+  * [Visualization of Results](#visualization-of-results)
+  * [Batch Evaluation](#batch-evaluation)
+* [Repository Layout](#repository-layout)
+  * [Code Layout](#code-layout)
+* [License](#license)
+
 ## Citation
 
 If you find our work useful in your research, please consider citing:
@@ -28,6 +48,11 @@ If you find our work useful in your research, please consider citing:
 > runtime differences might become larger.
 
 ## Dependencies
+
+The following describes the needed dependencies in general, followed
+by concrete instructions to install them on
+[Linux](#installing-dependencies-on-linux) or
+[macOS](#installing-depedencies-on-macos).
 
 **Toolchain**
 
@@ -128,6 +153,8 @@ Ubuntu 20.04 and newer are supported.
 > install GCC 9 from the [Toolchain test builds
 > PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test).
 
+**Toolchain and libraries**
+
 ```
 # for RootBA and Ceres
 sudo apt install \
@@ -161,6 +188,8 @@ python3 -m pip install --user -U cmake
 export PATH="~/.local/bin:$PATH"
 ```
 
+**Python (optional)**
+
 Other python dependencies (for tools and scripts) can also be
 installed via pip.
 
@@ -175,13 +204,21 @@ For generating result tables and plots you additionally need
 sudo apt install texlive-latex-extra latexmk
 ```
 
-For developer tools, you can a) install `yapf` from pip:
+**Developer tools (optional)**
+
+For developer tools, you can install `ninja` and `ccache` from apt:
+
+```
+sudo apt install ccache ninja-build
+```
+
+You can install `yapf` from pip:
 
 ```
 python3 -m pip install --user -U yapf
 ```
 
-b) `clang-format` from apt:
+You can install `clang-format` from apt:
 
 > *Note:* on 18.04 you need to install clang-format version 10 or
 > newer from the [llvm website](https://apt.llvm.org/)):
@@ -190,7 +227,7 @@ b) `clang-format` from apt:
 sudo apt install clang-format
 ```
 
-c) For `clang-tidy` you need at least version 12, so even on Ubuntu 20.04
+For `clang-tidy` you need at least version 12, so even on Ubuntu 20.04
 you need to get it from the [llvm website](https://apt.llvm.org/).
 
 ### Installing depedencies on macOS
@@ -199,6 +236,8 @@ We support macOS 10.15 "Catalina" and newer.
 
 > *Note:* We have not yet tested this codebase on M1 macs.
 
+**Toolchain and libraries**
+
 Install [Homebrew](https://brew.sh), then use it to install
 dependencies:
 
@@ -206,6 +245,8 @@ dependencies:
 brew install cmake glog gflags tbb suitesparse
 brew install glew ffmpeg libjpeg libpng libtiff
 ```
+
+**Python (optional)**
 
 Python dependencies (for tools and scripts) can be installed via pip
 after installing python 3 from homebrew.
@@ -222,10 +263,12 @@ For generating result tables and plots you additionally need
 brew install --cask mactex
 ```
 
+**Developer tools (optional)**
+
 Developer tools can be installed with homebrew.
 
 ```
-brew install clang-format clang-tidy yapf
+brew install ccache ninja clang-format clang-tidy yapf
 ```
 
 ## Building
@@ -244,9 +287,9 @@ and `ninja` automaticaly if they are found on `PATH`.
 > *Note:* The `build-external.sh` build script will init, synchronize
 > and update all submodules, so you don't have to do it manually when
 > the submodules were updated upstream. But it also means that if you
-> want to update a submodule yourself, you need to commit that change
-> before running this script, else it will update the submodule back
-> to the committed version.
+> want to update a submodule yourself (e.g. to a new version), you
+> need to commit that change before running this script, else it will
+> update the submodule back to the committed version.
 
 **Build RootBA option a)**
 
@@ -349,9 +392,9 @@ but the internal representation is the same.
 
 > *Note:* In our code we follow the convention that the *positive*
 > z-axis points forward in camera viewing direction. Both BAL and
-> bundle files specify the projection function assuming a the
-> *negative* z-axis pointing in viewing direction. We convert to our
-> convention when reading the datasets.
+> bundle files specify the projection function assuming the *negative*
+> z-axis pointing in viewing direction. We convert to our convention
+> when reading the datasets.
 
 For testing and development, two example datasets from BAL are
 included in the `data/rootba/bal` folder:
@@ -373,6 +416,15 @@ repository for further details on the data source, licensing and any
 preprocessing we applied. Large files in that repository are stored
 with [Git LFS](https://git-lfs.github.com/). Beware that the full
 download including LFS objects is around 15GB.
+
+The tutorial examples below assume that the data is found in a
+`rootba_data` folder parallel to the source folder, so if you decide
+to clone the data git repository, you can use:
+
+```
+cd ..
+git clone https://gitlab.vision.in.tum.de/rootba/rootba_data.git
+```
 
 ## Testing Bundle Adjustment
 
