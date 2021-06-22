@@ -285,11 +285,14 @@ anything the deafult is `Release`. This build script will use `ccache`
 and `ninja` automaticaly if they are found on `PATH`.
 
 > *Note:* The `build-external.sh` build script will init, synchronize
-> and update all submodules, so you don't have to do it manually when
-> the submodules were updated upstream. But it also means that if you
-> want to update a submodule yourself (e.g. to a new version), you
-> need to commit that change before running this script, else it will
-> update the submodule back to the committed version.
+> and update all submodules, so usually you don't have to worry about
+> submodules. For example, you don't have to run `git submodule update
+> --recursive` manually when the submodules were updated upstream, as
+> long as you run the `build-external.sh` script. But there is a small
+> caveat, should you ever want to update a submodule yourself
+> (e.g. update Eigen to a new version). In that case you need to
+> commit that change before running this script, else the script will
+> revert the submodule back to the committed version.
 
 **Build RootBA option a)**
 
