@@ -2,7 +2,7 @@
 
 ## Introduction
 
-In this tutorial we run and evaluate experiments for 10 exemplar
+In this tutorial we run and evaluate experiments for 10 exemplary
 sequences from the BAL dataset. This is divided into 4 steps: 1)
 generating config files, 2) getting the data, 3) running bundle
 adjustment, 4) generating result tables and plots. In the end, we
@@ -43,7 +43,7 @@ the format and how to modify it for your needs.
 
 > *Note:* To manage changes in experiment configs and keep track of
 > experiment logs, you can optionally use git with the LFS
-> extension. For this, make sure to that git LFS is [installed and
+> extension. For this, make sure that git LFS is [installed and
 > enabled](https://git-lfs.github.com/). Then initialize a git
 > repository and add the provided config files.
 > 
@@ -76,7 +76,7 @@ sequences.
 
 If you are planning to try out additional datasets, it might also be
 convenient to use our mirror git LFS repository instead of the
-downloader script. First, make sure to that git LFS is [installed and
+downloader script. First, make sure that git LFS is [installed and
 enabled](https://git-lfs.github.com/). Then, you can download the
 datasets with:
 
@@ -101,7 +101,7 @@ date (e.g. run `./scripts/build-rootba.sh`).
 > corresponding folder.
 
 With that we can start running the experiments. If you want a fair
-evaluation, make sure no other process takes up CPU ressources while
+evaluation, make sure no other process takes up CPU resources while
 the experiments are running.
 
 ```
