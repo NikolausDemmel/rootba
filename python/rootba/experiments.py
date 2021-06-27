@@ -21,12 +21,13 @@ from collections.abc import Mapping
 from munch import Munch
 from munch import munchify
 from copy import deepcopy
+from collections import abc
 
 from .run import Run
 
 from .util import copy_subdict
 
-_CURRENT_CACHE_VERSION = '1.2'
+_CURRENT_CACHE_VERSION = '1.3'
 """cache version that can be incremented to invalidate all cache files in case the format changes"""
 
 
@@ -63,6 +64,7 @@ class Experiment:
                  display_name=None,
                  description=None,
                  caching_hash=None,
+                 spec=None,
                  seq_name_mapping=None,
                  extend=None,
                  extend_override=False):
@@ -74,6 +76,9 @@ class Experiment:
         :param name: experiment name
         :param display_name: optional experiment display name
         :param description: optional experiment description
+        :param caching_hash: own caching hash; mostly used to combine this hash with the has of extending experiments
+        :param spec: the config spec for this experiment; mainly informational for informative error messages; the
+               functionally relevant information has already be extracted an preprocessed (other arguments)
         :param seq_name_mapping: optional mapping of sequence names; may contain only part of the sequences
         :param extend: optionally provide base experiment whose runs are copied (and possibly extended) 
         :param extend_override: if True, sequences in the extended experiment may be replaced, if they are also found in `log_dirs` 
@@ -83,6 +88,7 @@ class Experiment:
         self.display_name = display_name
         self.description = description
         self.caching_hash = caching_hash
+        self.spec = spec
         self.runs = dict()
 
         if extend is not None:
@@ -97,7 +103,19 @@ class Experiment:
                 if run.seq_name in seqs_ok_to_override:
                     seqs_ok_to_override.remove(run.seq_name)  # ok only once
                 else:
-                    raise RuntimeError("{} appears multiple times in experiment {}".format(run.seq_name, self.name))
+                    if extend is not None and run.seq_name in extend.runs and not extend_override:
+                        raise RuntimeError(
+                            str.format(
+                                "{} appears both in the extended experiment {} and in the extending "
+                                "experiment {} but extend_override is False:\n - {}\n - {}\n", run.seq_name,
+                                extend.name, self.name, extend.runs[run.seq_name].dirpath, run.dirpath))
+                    else:
+                        raise RuntimeError(
+                            str.format(
+                                "{} appears multiple times in experiment {}:\n - {}\n - {}\n"
+                                "Do your experiment pattern(s) '{}' match too many directories? "
+                                "Delete the additional runs or narrow the pattern.", run.seq_name, self.name,
+                                self.runs[run.seq_name].dirpath, run.dirpath, "', '".join(self.spec["pattern"])))
             self.runs[run.seq_name] = run
 
     def sequences(self, filter_regex=None):
@@ -184,6 +202,7 @@ class Experiment:
                          caching_hash=caching_hash,
                          seq_name_mapping=seq_name_mapping,
                          extend=extend,
+                         spec=deepcopy(spec),
                          **kwargs)
 
         if cache_dir:
@@ -204,11 +223,7 @@ class Experiment:
         :param filter_regex: optional additional regex; limits result to matching paths 
         :return: list of (filtered) paths (joined with base path)
         """
-
-        if "pattern" not in spec:
-            return []
-        patterns = [spec.pattern] if isinstance(spec.pattern, str) else spec.pattern
-        log_dirs = [d for p in patterns for d in glob(os.path.join(base_path, p)) if Run.is_run_dir(d)]
+        log_dirs = [d for p in spec.pattern for d in glob(os.path.join(base_path, p)) if Run.is_run_dir(d)]
         if spec.filter_regex:
             log_dirs = [d for d in log_dirs if re.search(spec.filter_regex, d)]
         if filter_regex:
@@ -468,6 +483,10 @@ def load_experiments_config(path, args=None):
         spec.setdefault("description", None)
         spec.setdefault("filter_regex", config.options.filter_regex)
         spec.setdefault("overwrite_cache", config.options.overwrite_cache)
+        spec.setdefault("pattern", [])
+        spec.pattern = [spec.pattern] if isinstance(spec.pattern, str) else spec.pattern  # ensure list
+        assert isinstance(spec.pattern, abc.Sequence), "pattern {} in experiment {} is neither string nor list".format(
+            spec.pattern, spec.name)
 
     # results: backwards-compatibility -- move old sections into 'results'
     if "results_tables" in config:

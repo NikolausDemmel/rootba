@@ -185,8 +185,16 @@ sudo apt install python3-pip
 python3 -m pip install --user -U cmake
 
 # put this in your .bashrc to ensure cmake from pip is found
-export PATH="~/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 ```
+
+> *Note:* If you run this in a plain Ubuntu docker container you might
+> need to install some additional basic packages (which should already
+> be installed on a desktop system):
+>
+> ```
+> sudo apt install git-core wget curl time software-properties-common
+> ```
 
 **Python (optional)**
 
@@ -218,17 +226,32 @@ You can install `yapf` from pip:
 python3 -m pip install --user -U yapf
 ```
 
-You can install `clang-format` from apt:
+For `clang-tidy` you need at least version 12, so even on Ubuntu 20.04
+you need to get it from the [llvm website](https://apt.llvm.org/):
 
-> *Note:* on 18.04 you need to install clang-format version 10 or
-> newer from the [llvm website](https://apt.llvm.org/)):
+```
+wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+sudo add-apt-repository "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-12 main"
+sudo apt update
+sudo apt install clang-tidy-12
+```
+
+On Ubuntu 20.04 and above, `clang-format` from apt is recent enough
+(we require at least version 10):
 
 ```
 sudo apt install clang-format
 ```
 
-For `clang-tidy` you need at least version 12, so even on Ubuntu 20.04
-you need to get it from the [llvm website](https://apt.llvm.org/).
+> *Note:* on 18.04 you need to install clang-format version 10 or
+> newer from the [llvm website](https://apt.llvm.org/). For example,
+> after following the instructions above for installing clang-tidy,
+> you can install clang-format version 12:
+>
+> ```
+> sudo apt install clang-format-12
+> ```
+
 
 ### Installing depedencies on macOS
 
@@ -420,14 +443,15 @@ preprocessing we applied. Large files in that repository are stored
 with [Git LFS](https://git-lfs.github.com/). Beware that the full
 download including LFS objects is around 15GB.
 
-The tutorial examples below assume that the data is found in a
-`rootba_data` folder parallel to the source folder, so if you decide
-to clone the data git repository, you can use:
-
-```
-cd ..
-git clone https://gitlab.vision.in.tum.de/rootba/rootba_data.git
-```
+> *Note:* The tutorial examples below assume that the data is found in
+> a `rootba_data` folder parallel to the source folder, so if you
+> decide to clone the data git repository, you can use (after
+> installing and enabling [Git LFS](https://git-lfs.github.com/)):
+>
+> ```
+> cd ..
+> git clone https://gitlab.vision.in.tum.de/rootba/rootba_data.git
+> ```
 
 ## Testing Bundle Adjustment
 

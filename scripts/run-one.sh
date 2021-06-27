@@ -50,6 +50,11 @@ FOLDER="${1}"
 
 cd "$FOLDER"
 
+if ! which time 2> /dev/null; then
+    echo "Did not find 'time' executable. Not installed?"
+    exit 1
+fi
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     TIMECMD="`which time` -lp"
 else

@@ -143,11 +143,50 @@ cp examples/batch/experiments-tutorial.toml ../rootba_experiments/
 ./scripts/generate-tables.py --config ../rootba_experiments/experiments-tutorial.toml --open
 ```
 
+> *Note:* If you ran `./scripts/run-all-in.sh` multiple times, you
+> might get an error like
+> 
+> ```
+> [...]
+> RuntimeError: ladybug412 appears multiple times in experiment qr_float:
+>  - /Users/demmeln/work/slam/rootba/rootba_experiments/01_tutorial/20210620-221258/1_rootba_qr/it20_rootbaqr_float_ladybug412
+>  - /Users/demmeln/work/slam/rootba/rootba_experiments/01_tutorial/20210620-214304/1_rootba_qr/it20_rootbaqr_float_ladybug412
+> Do your experiment pattern(s) '01_tutorial/*/1_*/*qr_float*' match too many directories? Delete the additional runs or narrow the pattern.
+> ```
+> 
+> This is because the experiments patterns in the provided
+> `experiments-tutorial.toml` file matches any date and time for the
+> output folder. You can either delete the additional output folders
+> (e.g. `rootba_experiments/01_tutorial/20210620-221258` in the above
+> example) or narrow the pattern definition in the experiments config,
+> e.g.:
+>
+> ```
+> [[experiments]]
+> name = "qr_float"
+> display_name = "$\\sqrt{BA}$-32"
+> pattern = "01_tutorial/20210620-214304/1_*/*qr_float*"
+> ```
+
 The `--open` command line argument will open the generated PDF in the
 default viewer, but you can also find it in under
 `../rootba_experiments/tables/experiments-tutorial.pdf`.
 
 ![PDF Preview](images/tutorial-preview.jpg)
+
+> *Note:* Experiment runs are cached by the `generate-tables.py`
+> script. The cache is invalidated automatically if you change
+> anything in the experiment definition that affects the searched
+> folders such as the `pattern` or `filter_regex` keys. The cache is
+> however **not** automatically invalidated, if just something changes
+> in the matched output folders on the disk (since the whole point of
+> caching is that we don't have to traverse the directory structure
+> again looking for logs). For example, if in the tutorial, after
+> generating result tables once, you delete the output folder, rerun
+> the experiments, and regenerate tables, it will still use the old
+> cached results. In that case, either delete the cache folder or add
+> the `--override-cache` command line argument to
+> `generate-tables.py`.
 
 ## Reproducing CVPR'21 results
 
