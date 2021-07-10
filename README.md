@@ -584,7 +584,7 @@ extension.
   - `bal`: data structures for the optimization state; options; common
     utilities and logging
   - `ceres`: everything related to our implementation with Ceres
-  - `cg`: custom CG implementation including data strcutures for
+  - `cg`: custom CG implementation including data structures for
     pre-conditioners
   - `cli`: common utils for command line parsing and automatically
     registering options with the command line
