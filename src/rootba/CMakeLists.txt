@@ -31,10 +31,10 @@ target_link_libraries(rootba
     rootba::magic_enum
     rootba::pprint
     rootba::Cereal
-    Eigen3::Eigen
-    glog::glog
     fmt::fmt
     absl::flat_hash_map
+    Eigen3::Eigen
+    glog::glog
     TBB::tbb
 )
 
