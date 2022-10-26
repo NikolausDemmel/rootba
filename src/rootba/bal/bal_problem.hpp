@@ -161,6 +161,12 @@ class BalProblem {
   BalProblem() = default;
   explicit BalProblem(const std::string& path);
 
+  void init_problem(int num_cams, int num_lms);
+
+  void add_cam(int cam_idx, Eigen::Quaterniond &R_cw, Eigen::Vector3d &t_cw, Eigen::Vector4d &intr);
+  void add_landmark(int lm_idx, const Eigen::Vector3d &p_w);
+  void set_observation(int cam_idx, int lm_idx, const Eigen::Vector2d &pixel_obs);
+
   void load_bal(const std::string& path);
   void load_bundler(const std::string& path);
 

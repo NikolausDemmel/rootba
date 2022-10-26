@@ -185,6 +185,40 @@ BalProblem<Scalar>::BalProblem(const std::string& path) {
 }
 
 template <typename Scalar>
+void BalProblem<Scalar>::init_problem(int num_cams, int num_lms){
+    // clear memory and re-allocate
+    if (cameras_.capacity() > unsigned_cast(num_cams)) {
+      decltype(cameras_)().swap(cameras_);
+    }
+    if (landmarks_.capacity() > unsigned_cast(num_lms)) {
+      decltype(landmarks_)().swap(landmarks_);
+    }
+    cameras_.resize(num_cams);
+    landmarks_.resize(num_lms);
+}
+
+template <typename Scalar>
+void BalProblem<Scalar>::add_cam(int cam_idx, Eigen::Quaterniond &R_cw, Eigen::Vector3d &t_cw, Eigen::Vector4d &intr){
+  auto& cam = cameras_.at(cam_idx);
+
+  cam.T_c_w.so3()  = SO3(R_cw.cast<Scalar>());
+  cam.T_c_w.translation() = t_cw.cast<Scalar>();
+  cam.intrinsics = CameraModel();
+  cam.intrinsics.setPinholeIntrinsic(intr.cast<Scalar>());
+}
+
+template <typename Scalar>
+void BalProblem<Scalar>::add_landmark(int lm_idx, const Eigen::Vector3d &p_w){
+  landmarks_.at(lm_idx).p_w = p_w.cast<Scalar>();
+}
+
+template <typename Scalar>
+void BalProblem<Scalar>::set_observation(int cam_idx, int lm_idx, const Eigen::Vector2d &pixel_obs){
+  auto [obs, inserted] = landmarks_.at(lm_idx).obs.try_emplace(cam_idx);
+  obs->second.pos = pixel_obs.cast<Scalar>();
+}
+
+template <typename Scalar>
 void BalProblem<Scalar>::load_bal(const std::string& path) {
   FILE* fptr = std::fopen(path.c_str(), "r");
   if (fptr == nullptr) {
