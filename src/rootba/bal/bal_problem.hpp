@@ -94,6 +94,13 @@ class BalProblem {
       intrinsics = CameraModel(p.template tail<3>());
     }
 
+    inline void setFixed(bool fixed = true){
+      fixed_=fixed;
+    }
+    bool isFixed() const{
+      return fixed_;
+    }
+
     void apply_inc_pose(const Vec6& inc) { inc_pose(inc, T_c_w); }
 
     inline static void inc_pose(const Vec6& inc, SE3& T_c_w) {
@@ -128,6 +135,7 @@ class BalProblem {
     }
 
    private:
+    bool fixed_ = false;
     SE3 T_c_w_backup_;
     CameraModel intrinsics_backup_;
   };
@@ -166,6 +174,7 @@ class BalProblem {
   void add_cam(int cam_idx, Eigen::Quaterniond &R_cw, Eigen::Vector3d &t_cw, Eigen::Vector4d &intr);
   void add_landmark(int lm_idx, const Eigen::Vector3d &p_w);
   void set_observation(int cam_idx, int lm_idx, const Eigen::Vector2d &pixel_obs);
+  void fix_cam(int cam_idx);
 
   void load_bal(const std::string& path);
   void load_bundler(const std::string& path);

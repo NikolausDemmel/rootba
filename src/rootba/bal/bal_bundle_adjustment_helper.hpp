@@ -82,7 +82,8 @@ class BalBundleAdjustmentHelper {
                               bool ignore_validity_check, VecR& res,
                               MatRP* d_res_d_xi = nullptr,
                               MatRI* d_res_d_i = nullptr,
-                              MatRL* d_res_d_l = nullptr);
+                              MatRL* d_res_d_l = nullptr,
+                              bool fix_cam = false);
 };
 
 }  // namespace rootba

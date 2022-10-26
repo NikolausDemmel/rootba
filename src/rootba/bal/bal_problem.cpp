@@ -219,6 +219,12 @@ void BalProblem<Scalar>::set_observation(int cam_idx, int lm_idx, const Eigen::V
 }
 
 template <typename Scalar>
+void BalProblem<Scalar>::fix_cam(int cam_idx){
+  auto& cam = cameras_.at(cam_idx);
+  cam.setFixed(true);
+}
+
+template <typename Scalar>
 void BalProblem<Scalar>::load_bal(const std::string& path) {
   FILE* fptr = std::fopen(path.c_str(), "r");
   if (fptr == nullptr) {

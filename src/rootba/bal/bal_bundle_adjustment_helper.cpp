@@ -112,7 +112,7 @@ template <typename Scalar>
 bool BalBundleAdjustmentHelper<Scalar>::linearize_point(
     const Vec2& obs, const Vec3& lm_p_w, const SE3& T_c_w,
     const basalt::BalCamera<Scalar>& intr, const bool ignore_validity_check,
-    VecR& res, MatRP* d_res_d_xi, MatRI* d_res_d_i, MatRL* d_res_d_l) {
+    VecR& res, MatRP* d_res_d_xi, MatRI* d_res_d_i, MatRL* d_res_d_l, bool fix_cam) {
   Mat4 T_c_w_mat = T_c_w.matrix();
 
   Vec4 p_c_3d = T_c_w_mat * lm_p_w.homogeneous();
@@ -133,12 +133,16 @@ bool BalBundleAdjustmentHelper<Scalar>::linearize_point(
   }
 
   if (d_res_d_xi) {
-    Mat<Scalar, 4, POSE_SIZE> d_point_d_xi;
-    d_point_d_xi.template topLeftCorner<3, 3>() = Mat3::Identity();
-    d_point_d_xi.template topRightCorner<3, 3>() =
-        -SO3::hat(p_c_3d.template head<3>());
-    d_point_d_xi.row(3).setZero();
-    *d_res_d_xi = d_res_d_p * d_point_d_xi;
+    if(!fix_cam){
+      Mat<Scalar, 4, POSE_SIZE> d_point_d_xi;
+      d_point_d_xi.template topLeftCorner<3, 3>() = Mat3::Identity();
+      d_point_d_xi.template topRightCorner<3, 3>() =
+          -SO3::hat(p_c_3d.template head<3>());
+      d_point_d_xi.row(3).setZero();
+      *d_res_d_xi = d_res_d_p * d_point_d_xi;
+    }else{
+      d_res_d_xi->setZero();
+    }
   }
 
   if (d_res_d_l) {
