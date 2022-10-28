@@ -44,4 +44,8 @@ void bundle_adjust_ceres(BalProblem<double>& bal_problem,
                          const SolverOptions& solver_options,
                          BaLog* log = nullptr);
 
+void bundle_adjust_g2o(BalProblem<double>& bal_problem,
+                         const SolverOptions& solver_options,
+                         BaLog* log = nullptr);
+
 }
