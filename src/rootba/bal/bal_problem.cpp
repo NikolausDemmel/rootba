@@ -195,6 +195,7 @@ void BalProblem<Scalar>::init_problem(int num_cams, int num_lms){
     }
     cameras_.resize(num_cams);
     landmarks_.resize(num_lms);
+    forceStopFlag_ = nullptr;
 }
 
 template <typename Scalar>

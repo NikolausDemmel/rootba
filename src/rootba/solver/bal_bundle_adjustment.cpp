@@ -281,7 +281,7 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
   bool terminated = false;
 
-  for (int it = 0; it <= max_lm_iter && !terminated;) {
+  for (int it = 0; it <= max_lm_iter && !terminated && !bal_problem.terminate();) {
     IterationSummary it_summary;
     it_summary.iteration = it;
     linearizor->start_iteration(&it_summary);
@@ -322,7 +322,7 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
     // Don't limit inner lm iterations (to be in line with ceres)
     constexpr int MAX_INNER_IT = std::numeric_limits<int>::max();
 
-    for (int j = 0; j < MAX_INNER_IT && it <= max_lm_iter && !terminated; j++) {
+    for (int j = 0; j < MAX_INNER_IT && it <= max_lm_iter && !terminated && !bal_problem.terminate(); j++) {
       if (j > 0) {
         std::cout << "Iteration {}, backtracking\n"_format(it);
 
@@ -544,7 +544,7 @@ void bundle_adjust_manual(BalProblem<Scalar>& bal_problem,
         solver_summary->total_time_in_seconds;
   }
 
-  LOG(INFO) << solver_summary->message;
+  // LOG(INFO) << solver_summary->message;
 
   // TODO: Print summary similar to ceres: oneline, or full
 }

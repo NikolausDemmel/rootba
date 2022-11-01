@@ -176,6 +176,9 @@ class BalProblem {
   void set_observation(int cam_idx, int lm_idx, const Eigen::Vector2d &pixel_obs);
   void fix_cam(int cam_idx);
 
+  void set_force_stop_flag(bool *flag) { forceStopFlag_ = flag; }
+  bool terminate() {return forceStopFlag_ ? (*forceStopFlag_) : false; }
+
   void load_bal(const std::string& path);
   void load_bundler(const std::string& path);
 
@@ -242,6 +245,7 @@ class BalProblem {
   Cameras cameras_;
   Landmarks landmarks_;
 
+  bool *forceStopFlag_;
   /// quiet means no INFO level log output
   bool quiet_ = false;
 };

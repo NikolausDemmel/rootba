@@ -50,14 +50,14 @@ struct BalResidualOptions : public VisitableOptions<BalResidualOptions> {
   BEGIN_VISITABLES(BalResidualOptions);
 
   VISITABLE_META(RobustNorm, robust_norm,
-                 init(RobustNorm::NONE)
+                 init(RobustNorm::HUBER)
                      .help("which robust norm to use. NONE: squared norm, "
                            "HUBER: Huber norm."));
 
   // ceres uses value of 1.0 in bundle_adjuster example
   VISITABLE_META(
       double, huber_parameter,
-      init(1).range(0, 10).help("huber parameter for robust norm in pixels"));
+      init(sqrt(5.991)).range(0, 10).help("huber parameter for robust norm in pixels"));
 
   END_VISITABLES;
 };
