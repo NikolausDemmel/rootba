@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -125,7 +125,8 @@ class LandmarkBlock {
   virtual void add_Jp_diag2(VecX& res) const = 0;
 
   virtual void add_Q2TJp_T_Q2TJp_blockdiag(
-      BlockDiagonalAccumulator<Scalar>& accu) const = 0;
+      BlockDiagonalAccumulator<Scalar>& accu,
+      std::vector<std::mutex>* pose_mutex = nullptr) const = 0;
   virtual void add_Jp_T_Jp_blockdiag(
       BlockDiagonalAccumulator<Scalar>& accu) const = 0;
 
@@ -144,6 +145,8 @@ class LandmarkBlock {
   virtual void stage2(Scalar lambda, const VecX* jacobian_scaling,
                       BlockDiagonalAccumulator<Scalar>* precond_block_diagonal,
                       VecX& bref) = 0;
+
+  virtual const std::vector<size_t>& get_pose_idx() const = 0;
 };
 
 template <typename Scalar, int POSE_SIZE>

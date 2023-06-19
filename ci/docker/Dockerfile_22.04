@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 # non-persistent environment variables
 ARG DEBIAN_FRONTEND=noninteractive
@@ -20,31 +20,31 @@ ENV LC_ALL en_US.UTF-8
 
 # PPAs
 RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - && \
-    apt-add-repository -y "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main" && \
-    apt-add-repository -y "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main" && \
-    apt-add-repository -y "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-12 main" && \
-    add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    apt-add-repository -y "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-16 main"
 
-# updates from toolchain and clang repo
+# updates from clang repo
 RUN apt-get update && apt-get dist-upgrade -y
 
 # Install base C++ dev tools
 RUN apt-get update && apt-get install -y \
     build-essential \
-    clang-10 \
-    clang-11 \
-    clang-12 \
-    g++-9 \
-    libc++-dev \
-    clang-format-11 \
-    clang-tidy-11 \
-    clang-format-12 \
-    clang-tidy-12 \
+    clang-14 \
+    clang-15 \
+    clang-16 \
+    g++-11 \
+    g++-12 \
+    libc++-15-dev \
+    clang-format-15 \
+    clang-tidy-15 \
     cmake \
     pkg-config \
     git-core \
     git-lfs \
     ccache
+
+# cannot install libc++-dev due to imcompatibility with libgoogle-glog-dev
+# https://bugs.launchpad.net/ubuntu/+source/google-glog/+bug/1991919
+#    libc++-dev \
 
 # Python
 RUN apt-get update && apt-get install -y \

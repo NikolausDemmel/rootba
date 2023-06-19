@@ -14,5 +14,5 @@ target_sources(rootba_pangolin
 target_link_libraries(rootba_pangolin
   PUBLIC
     rootba
-    pangolin
+    pango_display
 )

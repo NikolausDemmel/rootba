@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,7 @@ struct DatasetSummary {
   int num_cameras = 0;
   int num_landmarks = 0;
   int num_observations = 0;
+  double rcs_sparsity = 0;
 
   // per landmark observation stats
   Stats per_lm_obs;

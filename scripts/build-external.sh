@@ -5,7 +5,7 @@
 ## This file is part of the RootBA project.
 ## https://github.com/NikolausDemmel/rootba
 ##
-## Copyright (c) 2021, Nikolaus Demmel.
+## Copyright (c) 2021-2023, Nikolaus Demmel.
 ## All rights reserved.
 ##
 
@@ -33,7 +33,7 @@ else
     # TODO: more flexibility when determining correct default compiler, depending on what is installed
     # GCC version 9 is minimum for decent C++17 support
     if [ -z "$CXX" ]; then
-        for VER in 9 10 11; do
+        for VER in 9 10 11 12 13; do
             if hash g++-$VER 2> /dev/null; then
                 export CC=gcc-$VER
                 export CXX=g++-$VER
@@ -44,7 +44,7 @@ else
 
     # if no GCC, try clang; minimum version is 9
     if [ -z "$CXX" ]; then
-        for VER in 9 10 11 12; do
+        for VER in 9 10 11 12 13 14 15 16 17; do
             if hash clang++-$VER 2> /dev/null; then
                 export CC=clang-$VER
                 export CXX=clang++-$VER
@@ -102,9 +102,18 @@ EIGEN_DIR="$PROJECT_DIR/external/eigen"
 # -O3, it might be overwritten e.g. with -O2 if we don't also set the
 # build type to Release.
 
-CXX_MARCH="${CXX_MARCH:-native}"
+# NOTE: Newer versions of Clang / AppleClang support -march=native on Apple Silicon,
+#       so at some point we can remove this workaround.
+if [ "$(uname -m)" = "x86_64" ]; then
+  CXX_MARCH="${CXX_MARCH:-native}"
+fi
 
-EXTRA_CXX_FLAGS="$EXTRA_CXX_FLAGS -march=$CXX_MARCH"
+# TODO: On apple silicon check compiler version, then set to "march native" if supported.
+#       Same also in build-rootba.sh and main CMakeLists.txt
+
+if [ ! -z "$CXX_MARCH" ]; then
+  EXTRA_CXX_FLAGS="$EXTRA_CXX_FLAGS -march=$CXX_MARCH"
+fi
 
 # map ci-build types to Default with custom flags to avoid override of -g0
 if [[ "${BUILD_TYPE}" == Ci* ]]; then
@@ -209,7 +218,6 @@ mkdir -p "$BUILD_PANGOLIN"
 pushd "$BUILD_PANGOLIN"
 cmake ../../Pangolin "${COMMON_CMAKE_ARGS[@]}" \
     -DCMAKE_FIND_FRAMEWORK=LAST \
-    -DEXPORT_Pangolin=OFF \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_TOOLS=OFF \
     -DBUILD_TESTS=OFF \
@@ -217,7 +225,7 @@ cmake ../../Pangolin "${COMMON_CMAKE_ARGS[@]}" \
     -DBUILD_PANGOLIN_LIBOPENEXR=OFF
 # Note: Now we install Eigen and it provides a config module
 #    "-DEIGEN_INCLUDE_DIR=$EIGEN_DIR"
-make -j$NUM_PARALLEL_BUILDS pangolin
+make -j$NUM_PARALLEL_BUILDS all
 make install
 popd
 fi

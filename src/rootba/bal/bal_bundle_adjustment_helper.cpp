@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -154,8 +154,8 @@ template class BalBundleAdjustmentHelper<float>;
 
 // The helper in double is used by the ceres iteration callback, so always
 // compile it; it should not be a big compilation overhead.
-//#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+// #ifdef ROOTBA_INSTANTIATIONS_DOUBLE
 template class BalBundleAdjustmentHelper<double>;
-//#endif
+// #endif
 
 }  // namespace rootba

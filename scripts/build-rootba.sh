@@ -5,7 +5,7 @@
 ## This file is part of the RootBA project.
 ## https://github.com/NikolausDemmel/rootba
 ##
-## Copyright (c) 2021, Nikolaus Demmel.
+## Copyright (c) 2021-2023, Nikolaus Demmel.
 ## All rights reserved.
 ##
 
@@ -98,7 +98,11 @@ fi
 
 #export VERBOSE=1
 
-CXX_MARCH="${CXX_MARCH:-native}"
+# NOTE: Newer versions of Clang / AppleClang support -march=native on Apple Silicon,
+#       so at some point we can remove this workaround.
+if [ $(uname -m) = "x86_64" ]; then
+  CXX_MARCH="${CXX_MARCH:-native}"
+fi
 
 ###############################################################################
 ## execute

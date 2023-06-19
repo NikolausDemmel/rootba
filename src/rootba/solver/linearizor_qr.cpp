@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 #include "rootba/solver/linearizor_qr.hpp"
+
+#include <cmath>
+#include <limits>
 
 #include "rootba/cg/conjugate_gradient.hpp"
 #include "rootba/cg/preconditioner.hpp"
@@ -163,7 +166,7 @@ typename LinearizorQR<Scalar_>::VecX LinearizorQR<Scalar_>::solve(
   if (!options_.staged_execution) {
     Timer timer;
 
-    // scale landmark jacobians only on the first inner iteration
+    // scale pose jacobians only on the first inner iteration
     if (new_linearization_point_) {
       lqr_->scale_Jp_cols(pose_jacobian_scaling_);
       IF_SET(it_summary_)->scale_pose_jacobian_time_in_seconds = timer.reset();
@@ -250,6 +253,7 @@ typename LinearizorQR<Scalar_>::VecX LinearizorQR<Scalar_>::solve(
     IF_SET(it_summary_)->solve_reduced_system_time_in_seconds = timer.elapsed();
     IF_SET(it_summary_)->linear_solver_message = cg_summary.message;
     IF_SET(it_summary_)->linear_solver_iterations = cg_summary.num_iterations;
+    IF_SET(it_summary_)->linear_solver_type = "bal_qr";
     IF_SET(summary_)->num_linear_solves += 1;
   }
 
@@ -265,7 +269,12 @@ Scalar_ LinearizorQR<Scalar_>::apply(VecX&& inc) {
   // backsubstitue landmarks and compute model cost difference
   Timer timer;
   Scalar l_diff = lqr_->back_substitute(inc);
-  IF_SET(it_summary_)->back_substitution_time_in_seconds = timer.elapsed();
+  IF_SET(it_summary_)->back_substitution_time_in_seconds = timer.reset();
+
+  // return directly in case the update is too bad
+  if (!std::isfinite(l_diff)) {
+    return std::numeric_limits<Scalar>::quiet_NaN();
+  }
 
   // unscale pose increments
   inc.array() *= pose_jacobian_scaling_.array();
@@ -276,6 +285,7 @@ Scalar_ LinearizorQR<Scalar_>::apply(VecX&& inc) {
     bal_problem_.cameras()[i].apply_inc_intrinsics(
         inc.template segment<3>(i * 9 + 6));
   }
+  IF_SET(it_summary_)->update_cameras_time_in_seconds = timer.elapsed();
 
   return l_diff;
 }

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rootba/ceres/option_utils.hpp"
 
 #include <iostream>
-#include <thread>
 
 #include <ceres/loss_function.h>
 #include <magic_enum/magic_enum.hpp>
 
 #include "rootba/ceres/loss_function.hpp"
 #include "rootba/util/format.hpp"
+#include "rootba/util/tbb_utils.hpp"
 
 namespace rootba {
 
@@ -75,8 +75,15 @@ void set_ceres_options(ceres::Solver::Options& out, const SolverOptions& in) {
 
   out.minimizer_progress_to_stdout = in.verbosity_level > 0;
 
-  out.num_threads =
-      in.num_threads > 0 ? in.num_threads : std::thread::hardware_concurrency();
+  // Use effective available hardware threads (respecting process limits, TBB
+  // task_arena limits, and TBB global control). We assume that if the user
+  // specified a thread limit, this is set as a limit with tbb::global_control
+  // outside of this function. The reason to not pass in.num_threads is that the
+  // way our custom solvers deal with a specified limit that is larger than the
+  // hardware concurrency is that the threads are then still limited by hardware
+  // concurrency. To get the same effect for Ceres, we pass the effective
+  // concurrency as determined by TBB.
+  out.num_threads = tbb_effective_max_concurrency();
 
   out.max_num_iterations = in.max_num_iterations;
 

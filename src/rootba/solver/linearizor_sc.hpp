@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-#include "rootba/cg/block_sparse_matrix.hpp"
 #include "rootba/solver/linearizor_base.hpp"
 
 namespace rootba {
@@ -48,10 +47,11 @@ class LinearizorSC : public LinearizorBase<Scalar_> {
  public:
   using Scalar = Scalar_;
   using Base = LinearizorBase<Scalar>;
+  constexpr static int POSE_SIZE = 9;
 
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
- public:
+ public:  // public interface
   LinearizorSC(BalProblem<Scalar>& bal_problem, const SolverOptions& options,
                SolverSummary* summary = nullptr);
 
@@ -69,7 +69,7 @@ class LinearizorSC : public LinearizorBase<Scalar_> {
   using Base::options_;
   using Base::summary_;
 
-  std::unique_ptr<LinearizationSC<Scalar, 9>> lsc_;
+  std::unique_ptr<LinearizationSC<Scalar, POSE_SIZE>> lsc_;
 
   // set during linearization, used in solve
   VecX pose_jacobian_scaling_;

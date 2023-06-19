@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rootba {
 
-using namespace fmt::literals;
+// libfmt's string literal formatter implementation was deprecated in 2021-12,
+// so provide our own (see also:
+// https://github.com/fmtlib/fmt/issues/2640#issuecomment-1048894376)
+
+namespace literals {
+
+inline auto operator"" _format(const char* s, size_t n) {
+  return [=](auto&&... args) {
+#if FMT_VERSION < 50000
+    return fmt::format(s, args...);
+#elif FMT_VERSION < 80100
+    return fmt::format(std::string_view(s, n), args...);
+#else
+    return fmt::format(fmt::runtime(std::string_view(s, n)), args...);
+#endif
+  };
+}
+
+}  // namespace literals
+
+// make the _format string literal available in the whole namespace
+using namespace literals;
 
 }  // namespace rootba

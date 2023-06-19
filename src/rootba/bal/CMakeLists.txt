@@ -32,6 +32,7 @@ if(ROOTBA_ENABLE_TESTING)
       snavely_projection.test.cpp
     LINK_LIBRARIES
       rootba
+      rootba_testing
   )
 
 endif()

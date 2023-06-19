@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,9 @@ int main(int argc, char** argv) {
 
   // override solver type to force SC solver in this executable
   if (options.solver.solver_type !=
-      SolverOptions::SolverType::SCHUR_COMPLEMENT) {
+          SolverOptions::SolverType::SCHUR_COMPLEMENT &&
+      options.solver.solver_type !=
+          SolverOptions::SolverType::POWER_SCHUR_COMPLEMENT) {
     LOG(INFO)
         << "Overriding `solver.solver_type` option to 'SCHUR_COMPLEMENT'.";
     options.solver.solver_type = SolverOptions::SolverType::SCHUR_COMPLEMENT;

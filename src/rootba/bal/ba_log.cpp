@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,9 @@ bool BaLog::save_json(const std::string& path, const SaveLogFlags flags) const {
                        result[name].push_back(value);
                      },
                      [&](const char* name, const double& value) {
+                       result[name].push_back(value);
+                     },
+                     [&](const char* name, const std::string& value) {
                        result[name].push_back(value);
                      },
                      [&](const char* name, const std::vector<double>& value) {

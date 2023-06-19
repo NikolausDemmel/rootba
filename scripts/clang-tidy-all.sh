@@ -5,7 +5,7 @@
 ## This file is part of the RootBA project.
 ## https://github.com/NikolausDemmel/rootba
 ##
-## Copyright (c) 2021, Nikolaus Demmel.
+## Copyright (c) 2021-2023, Nikolaus Demmel.
 ## All rights reserved.
 ##
 
@@ -36,7 +36,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 BUILD_FOLDER="${1:-$SCRIPT_DIR/../build}"
 
-CLANG_TIDY_COMMANDS="clang-tidy-12 clang-tidy /usr/local/opt/llvm/bin/clang-tidy"
+CLANG_TIDY_COMMANDS="clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    CLANG_TIDY_COMMANDS="$CLANG_TIDY_COMMANDS $(brew --prefix llvm)/bin/clang-tidy"
+fi
 
 # find the first available command:
 for CMD in $CLANG_TIDY_COMMANDS; do
@@ -79,9 +82,17 @@ fi
 # assume default locations of run-clang-tidy.py scripts
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # assume clang-tidy from homebrew installation
-    RUN_CLANG_TIDY_CMD=/usr/local/opt/llvm/share/clang/run-clang-tidy.py
+    RUN_CLANG_TIDY_CMD="$(brew --prefix llvm)"/share/clang/run-clang-tidy.py
+    if [ ! -f "$RUN_CLANG_TIDY_CMD" ]; then
+        # for newer llvm versions the script moved here:
+        RUN_CLANG_TIDY_CMD="$(brew --prefix llvm)"/bin/run-clang-tidy
+    fi
 else
     RUN_CLANG_TIDY_CMD=/usr/lib/llvm-$MAJOR_VERSION_DETECTED/share/clang/run-clang-tidy.py
+    if [ ! -f "$RUN_CLANG_TIDY_CMD" ]; then
+        # for newer llvm versions the script moved here (on Ubuntu):
+        RUN_CLANG_TIDY_CMD=/usr/bin/run-clang-tidy-$MAJOR_VERSION_DETECTED.py
+    fi
 fi
 if ! hash "$RUN_CLANG_TIDY_CMD" 2>/dev/null; then
     echo "Didn't find run-clang-tidy.py ($RUN_CLANG_TIDY_CMD)"

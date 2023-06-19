@@ -287,15 +287,16 @@ dataset.input = "../../../../../rootba_data/bal/venice/problem-1778-993923-pre.t
 
 
 ###################
-# solver type: qr, sc, ceres
+# solver type: qr, sc, ceres, poba
 
 [_batch.config.rootbaqr]
 solver.solver_type = "SQUARE_ROOT"
-[_batch.config.rootbasc]
+[_batch.config.rootbaexplicitsc]
 solver.solver_type = "SCHUR_COMPLEMENT"
 [_batch.config.ceres]
 solver.solver_type = "CERES"
-
+[_batch.config.rootbapower]
+solver.solver_type = "POWER_SCHUR_COMPLEMENT"
 
 
 ###################
@@ -356,6 +357,8 @@ solver.residual.huber_parameter = 1.0
 solver.preconditioner_type = "SCHUR_JACOBI"
 [_batch.config.jacobi]
 solver.preconditioner_type = "JACOBI"
+[_batch.config.powersc]
+solver.preconditioner_type = "POWER_SCHUR_COMPLEMENT" # only support SCHUR_COMPLEMENT
 
 
 
@@ -382,6 +385,23 @@ solver.use_double = false
 solver.staged_execution = true
 [_batch.config.unstaged]
 solver.staged_execution = false
+
+
+
+###################
+# Options for POWER_SCHUR_COMPLEMENT
+
+
+[_batch.config.maxorderpower10]
+solver.power_order = 10
+[_batch.config.maxorderpower20]
+solver.power_order = 20
+[_batch.config.maxorderpower30]
+solver.power_order = 30
+[_batch.config.maxorderpower40]
+solver.power_order = 40
+[_batch.config.maxorderpower50]
+solver.power_order = 50
 
 
 
@@ -446,7 +466,7 @@ some_bal = ["ladybug73", "ladybug539", "ladybug1723", "trafalgar126", "trafalgar
 tutorial_bal = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646"]
 
 # some examples for experimentation with different configs
-all_rootba = ["rootbaqr", "rootbasc"]
+all_rootba = ["rootbaqr", "rootbaexplicitsc"]
 all_float = ["double", "float"]
 all_staged = ["staged", "unstaged"]
 all_optimized_cost = ["optimized_cost_error", "optimized_cost_error_valid", "optimized_cost_error_valid_avg"]

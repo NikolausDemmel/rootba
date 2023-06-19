@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rootba/util/tbb_utils.hpp"
 
 #include <atomic>
+#include <thread>
 
 #include <glog/logging.h>
 #include <tbb/global_control.h>
+#include <tbb/task_arena.h>
 #include <tbb/task_scheduler_observer.h>
 
 namespace rootba {
+
+int hardware_concurrency() { return std::thread::hardware_concurrency(); }
+
+int tbb_task_arena_max_concurrency() {
+  return tbb::this_task_arena::max_concurrency();
+}
+
+int tbb_global_max_allowed_parallelism() {
+  return tbb::global_control::active_value(
+      tbb::global_control::max_allowed_parallelism);
+}
+
+int tbb_effective_max_concurrency() {
+  return std::min(tbb_task_arena_max_concurrency(),
+                  tbb_global_max_allowed_parallelism());
+}
 
 struct ScopedTbbThreadLimit::Impl {
   std::unique_ptr<tbb::global_control> tbb_global_control;

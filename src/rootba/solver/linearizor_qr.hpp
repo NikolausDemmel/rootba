@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@ class LinearizorQR : public LinearizorBase<Scalar_> {
  public:
   using Scalar = Scalar_;
   using Base = LinearizorBase<Scalar>;
+  constexpr static int POSE_SIZE = 9;
 
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
@@ -69,7 +70,7 @@ class LinearizorQR : public LinearizorBase<Scalar_> {
   using Base::options_;
   using Base::summary_;
 
-  std::unique_ptr<LinearizationQR<Scalar, 9>> lqr_;
+  std::unique_ptr<LinearizationQR<Scalar, POSE_SIZE>> lqr_;
 
   // set during linearization, used in solve
   VecX pose_jacobian_scaling_;

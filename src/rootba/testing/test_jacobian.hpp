@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace rootba {
 
 // //////////////////////////////////////////////////////////////////////////
-// constants used in tests (numeric epsilons, etc...)
+// constants used in jacobian tests (numeric epsilons, etc...)
 // //////////////////////////////////////////////////////////////////////////
 template <class Scalar>
 struct TestConstants;
@@ -105,23 +105,5 @@ void test_jacobian(
     //<< "\ndiff:\n" << Jn - Ja;
   }
 }
-
-// //////////////////////////////////////////////////////////////////////////
-// Test types for float / double depending on cmake option
-// //////////////////////////////////////////////////////////////////////////
-#if defined(ROOTBA_INSTANTIATIONS_FLOAT) && \
-    defined(ROOTBA_INSTANTIATIONS_DOUBLE)
-
-using ScalarTestTypes = ::testing::Types<float, double>;
-
-#elif (defined ROOTBA_INSTANTIATIONS_FLOAT)
-
-using ScalarTestTypes = ::testing::Types<float>;
-
-#elif (defined ROOTBA_INSTANTIATIONS_DOUBLE)
-
-using ScalarTestTypes = ::testing::Types<double>;
-
-#endif
 
 }  // namespace rootba

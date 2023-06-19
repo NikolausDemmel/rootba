@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rootba/ceres/bal_iteration_callback.hpp"
 #include "rootba/ceres/bal_residuals.hpp"
 #include "rootba/ceres/option_utils.hpp"
+#include "rootba/util/tbb_utils.hpp"
 
 namespace rootba {
 
 void bundle_adjust_ceres(BalProblem<double>& bal_problem,
                          const SolverOptions& solver_options, BaLog* log) {
+  // Limit tbb threads (the effecitve limit is also passed to ceres in its
+  // options).
+  ScopedTbbThreadLimit thread_limit(solver_options.num_threads);
+
   // options
   const bool projection_validitity_check =
       ceres_use_projection_validity_check(solver_options);
@@ -64,13 +69,12 @@ void bundle_adjust_ceres(BalProblem<double>& bal_problem,
 
   // setup camera parameter blocks
   ceres::Problem problem;
-  ceres::LocalParameterization* camera_parameterization =
-      new ceres::ProductParameterization(
-          new ceres::EigenQuaternionParameterization(),
-          new ceres::IdentityParameterization(6));
+  ceres::Manifold* camera_manifold =
+      new ceres::ProductManifold<ceres::EigenQuaternionManifold,
+                                 ceres::EuclideanManifold<6>>();
   for (int i = 0; i < bal_problem.num_cameras(); ++i) {
     double* cam_ptr = camera_state.data() + i * CAM_STATE_SIZE;
-    problem.AddParameterBlock(cam_ptr, CAM_STATE_SIZE, camera_parameterization);
+    problem.AddParameterBlock(cam_ptr, CAM_STATE_SIZE, camera_manifold);
     ordering->AddElementToGroup(cam_ptr, 1);
   }
 

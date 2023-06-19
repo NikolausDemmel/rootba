@@ -23,4 +23,3 @@ target_link_libraries(bal_qr rootba_solver rootba_cli)
 
 add_executable(bal_sc bal_sc.cpp)
 target_link_libraries(bal_sc rootba_solver rootba_cli)
-

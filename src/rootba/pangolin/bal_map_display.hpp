@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ class BalFrameDisplay;
 
 class BalMapDisplay {
  public:
-  struct BalMapDisplayOptions {
+  struct Options {
     int point_size = 2;
     int cam_weight = 2;
     double cam_size = 1.5;
@@ -54,11 +54,11 @@ class BalMapDisplay {
   template <typename Scalar>
   void update(const BalProblem<Scalar>& bal_problem);
 
-  void draw(FrameIdx selected_frame, const BalMapDisplayOptions& options);
+  void draw(FrameIdx selected_frame, const Options& options);
 
  private:
   // draw points from buffers
-  void draw_pointcloud(bool selected, const BalMapDisplayOptions& options);
+  void draw_pointcloud(bool selected, const Options& options);
 
   // update the gl buffers for the saved points if needed
   // returns true if actually updated
@@ -89,12 +89,11 @@ class BalFrameDisplay {
   void update(const BalProblem<Scalar>& bal_problem);
 
   // draw, updating gl buffers if needed
-  void draw(bool selected, const BalMapDisplay::BalMapDisplayOptions& options);
+  void draw(bool selected, const BalMapDisplay::Options& options);
 
  private:
   // draw camera frustrum
-  void draw_camera(bool selected,
-                   const BalMapDisplay::BalMapDisplayOptions& options);
+  void draw_camera(bool selected, const BalMapDisplay::Options& options);
 
   const FrameIdx frame_id_;
 

@@ -10,29 +10,38 @@
 
 ## Table of Contents
 
-* [Citation](#citation)
-* [Dependencies](#dependencies)
-  * [Installing dependencies on Linux](#installing-dependencies-on-linux)
-  * [Installing depedencies on macOS](#installing-depedencies-on-macos)
-* [Building](#building)
-  * [CMake Options](#cmake-options)
-  * [Running Unit Tests](#running-unit-tests)
-* [BAL Problems](#bal-problems)
-* [Testing Bundle Adjustment](#testing-bundle-adjustment)
-  * [Visualization of BAL Problems](#visualization-of-bal-problems)
-  * [Running Bundle Adjustment](#running-bundle-adjustment)
-  * [Config Options](#config-options)
-  * [Visualization of Results](#visualization-of-results)
-  * [Batch Evaluation](#batch-evaluation)
-* [Repository Layout](#repository-layout)
-  * [Code Layout](#code-layout)
-* [License](#license)
+- [RootBA: Square Root Bundle Adjustment](#rootba-square-root-bundle-adjustment)
+  - [Table of Contents](#table-of-contents)
+  - [Citation](#citation)
+  - [Dependencies](#dependencies)
+    - [Installing dependencies on Linux](#installing-dependencies-on-linux)
+    - [Installing depedencies on macOS](#installing-depedencies-on-macos)
+  - [Building](#building)
+    - [CMake Options](#cmake-options)
+    - [Running Unit Tests](#running-unit-tests)
+  - [BAL Problems](#bal-problems)
+  - [Testing Bundle Adjustment](#testing-bundle-adjustment)
+    - [Visualization of BAL Problems](#visualization-of-bal-problems)
+    - [Running Bundle Adjustment](#running-bundle-adjustment)
+    - [Config Options](#config-options)
+    - [Visualization of Results](#visualization-of-results)
+    - [Batch Evaluation](#batch-evaluation)
+  - [Repository Layout](#repository-layout)
+    - [Code Layout](#code-layout)
+  - [License](#license)
 
 ## Citation
 
 If you find our work useful in your research, please consider citing:
 
 ```
+@inproceedings{weber2023poba,
+ author = {Simon Weber and Nikolaus Demmel and Tin Chon Chan and Daniel Cremers},
+ title = {Power Bundle Adjustment for Large-Scale 3D Reconstruction},
+ booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+ year = {2023}
+}
+
 @inproceedings{demmel2021rootba,
  author = {Nikolaus Demmel and Christiane Sommer and Daniel Cremers and Vladyslav Usenko},
  title = {Square Root Bundle Adjustment for Large-Scale Reconstruction},
@@ -41,11 +50,12 @@ If you find our work useful in your research, please consider citing:
 }
 ```
 
-> *Note:* The initial public release in this repository corresponds to
-> the code version evluated in the CVPR'21 paper, after refactoring
-> and cleanup. Except for minor numerical differences, the results
-> should be reproducible on comparable hardware. As the code evolves,
-> runtime differences might become larger.
+> *Note:* This repository contains the code for the **CVPR'21 Square Root BA**
+> paper, as well as the **CVPR'23 Power Bundle Adjustment** paper. This README
+> describes the implementation and tools in this repository as well as the
+> tutorial for reproducing the **RootBA** paper results. There is a dedicated
+> [self-contained tutorial](docs/PoBATutorial.md) for reproducing the **PoBA**
+> results.
 
 ## Dependencies
 
@@ -149,10 +159,6 @@ source code files:
 
 Ubuntu 20.04 and newer are supported.
 
-> *Note:* Ubuntu 18.04 should also work, but you need to additionally
-> install GCC 9 from the [Toolchain test builds
-> PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test).
-
 **Toolchain and libraries**
 
 ```
@@ -243,16 +249,6 @@ On Ubuntu 20.04 and above, `clang-format` from apt is recent enough
 sudo apt install clang-format
 ```
 
-> *Note:* on 18.04 you need to install clang-format version 10 or
-> newer from the [llvm website](https://apt.llvm.org/). For example,
-> after following the instructions above for installing clang-tidy,
-> you can install clang-format version 12:
->
-> ```
-> sudo apt install clang-format-12
-> ```
-
-
 ### Installing depedencies on macOS
 
 We support macOS 10.15 "Catalina" and newer.
@@ -275,7 +271,7 @@ Python dependencies (for tools and scripts) can be installed via pip
 after installing python 3 from homebrew.
 
 ```
-brew install python
+brew install python bash gnu-getopt
 python3 -m pip install --user -U py_ubjson matplotlib numpy munch scipy pylatex toml
 ```
 
@@ -291,7 +287,7 @@ brew install --cask mactex
 Developer tools can be installed with homebrew.
 
 ```
-brew install ccache ninja clang-format clang-tidy yapf
+brew install ccache ninja clang-format llvm yapf
 ```
 
 ## Building
@@ -544,6 +540,9 @@ This also includes instructions to reproduce the results presented in
 the CVPR'21 paper.
 
 ![PDF Preview](docs/images/tutorial-preview.jpg)
+
+There is a dedicated [self-contained tutorial](docs/PoBATutorial.md) for
+reproducing the results presented in the CVPR'23 paper.
 
 ## Repository Layout
 

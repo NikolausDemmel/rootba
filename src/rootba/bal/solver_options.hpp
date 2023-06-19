@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -61,15 +61,18 @@ struct SolverOptions : public VisitableOptions<SolverOptions> {
       SolverType,
       // square root BA with QR-based landmark marginalization
       (SQUARE_ROOT, 0),
-      // classical Schur complement based landmark marginalization
+      // classical Schur Complement based landmark marginalization
       SCHUR_COMPLEMENT,
+      // Power Schur Complement for Scalable Bundle Adjustment
+      POWER_SCHUR_COMPLEMENT,
       // Ceres-based implementation
       CERES);
 
   // see ceres::PreconditionerType
   // (rootba solvers and manual SC solvers don't implement all types)
   WISE_ENUM_CLASS_MEMBER(PreconditionerType, (IDENTITY, 0), JACOBI,
-                         SCHUR_JACOBI, CLUSTER_JACOBI, CLUSTER_TRIDIAGONAL);
+                         SCHUR_JACOBI, CLUSTER_JACOBI, CLUSTER_TRIDIAGONAL,
+                         POWER_SCHUR_COMPLEMENT);
 
   // see ceres::LinearSolverType
   WISE_ENUM_CLASS_MEMBER(LinearSolverType, (DENSE_NORMAL_CHOLESKY, 0), DENSE_QR,
@@ -216,7 +219,8 @@ struct SolverOptions : public VisitableOptions<SolverOptions> {
       init(PreconditionerType::SCHUR_JACOBI)
           .help("Which preconditioner to use for PCG (see Ceres). Valid values "
                 "for QR solver: JACOBI, SCHUR_JACOBI; valid values for SC "
-                "solver: SCHUR_JACOBI; valid values for Ceres: see Ceres."));
+                "solver: JACOBI, SCHUR_JACOBI; valid values for Ceres: see "
+                "Ceres."));
 
   // linear solver type (ceres default: SPARSE_NORMAL_CHOLESKY)
   VISITABLE_META(
@@ -260,7 +264,12 @@ struct SolverOptions : public VisitableOptions<SolverOptions> {
                                  "step (only QR solver)"));
 
   VISITABLE_META(int, reduction_alg,
-                 init(0).help("Reduction algorithm to use (only QR solver)"));
+                 init(1).help("Reduction algorithm to use. "
+                              "parallel_reduce: 0, parallel_for: 1"));
+
+  VISITABLE_META(int, power_order,
+                 init(10).help("Number of (maximum) inner iterations of Power "
+                               "Schur Complement preconditioner and solver."));
 
   VISITABLE_META(
       double, initial_vee,

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -38,11 +38,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <tuple>
 #include <type_traits>
 
-namespace rootba {
-
 // mp (meta programming) namespace to allow concise and short name that don't
 // clutter the main namespace
-namespace mp {
+namespace rootba::mp {
 
 // ////////////////////////////////////////////////////////////////////////////
 // overloads for generic lambdas
@@ -84,6 +82,4 @@ using is_instance = detail::is_instance_impl<std::decay_t<T>, U>;
 template <typename T, template <typename...> typename U>
 static constexpr bool is_instance_v = is_instance<T, U>::value;
 
-}  // namespace mp
-
-}  // namespace rootba
+}  // namespace rootba::mp

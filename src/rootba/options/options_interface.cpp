@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,7 @@ class ToJsonOptionsVisitor : public ConstOptionsVisitor {
 
   void operator()(const char* name, const OptionsVariableConstRef var,
                   const OptionsMeta& meta) override {
+    ROOTBA_UNUSED(meta);
     auto& current_node = *current_node_stack_.back();
     std::visit([&](auto val) { current_node[name] = val.get(); }, var);
   }
@@ -92,6 +93,7 @@ class FromJsonOptionsVisitor : public OptionsVisitor {
 
   void operator()(const char* name, const OptionsVariableRef var,
                   const OptionsMeta& meta) override {
+    ROOTBA_UNUSED(meta);
     const auto& current_node = *current_node_stack_.back();
     // if name exists, convert to expected type; else do nothing
     if (current_node.contains(name)) {
@@ -121,7 +123,8 @@ class FromJsonOptionsVisitor : public OptionsVisitor {
               static_assert(mp::always_false_v<decltype(val)>,
                             "non-exhaustive visitor!");
             }
-            used_json_ptrs_.insert(current_prefix_stack_.back() / name);
+            used_json_ptrs_.insert(
+                (current_prefix_stack_.back() / name).to_string());
           },
           var);
     }
@@ -168,7 +171,7 @@ class FromJsonOptionsVisitor : public OptionsVisitor {
       if (used_json_ptrs_.count(path)) {
         // add to used including all group-prefixes
         while (!json_ptr.empty()) {
-          used.insert(json_ptr);
+          used.insert(json_ptr.to_string());
           json_ptr.pop_back();
         }
       } else {
@@ -185,7 +188,7 @@ class FromJsonOptionsVisitor : public OptionsVisitor {
       while (true) {
         std::string part = json_ptr.back();
         json_ptr.pop_back();
-        if (used.count(json_ptr) || json_ptr.empty()) {
+        if (used.count(json_ptr.to_string()) || json_ptr.empty()) {
           json_ptr.push_back(part);
           break;
         }
@@ -203,13 +206,14 @@ class FromJsonOptionsVisitor : public OptionsVisitor {
     // report unused
     for (const auto& [path, count] : unused_grouped) {
       if (count > 0) {
-        if (allowed_top_level.count(path)) {
+        if (allowed_top_level.count(path.to_string())) {
           LOG(WARNING) << "{} in config unused ({} entries)."_format(
-              root_prefix / path, count);
+              (root_prefix / path).to_string(), count);
         }
       } else {
         // count 0 indicates leaf node (no grouping)
-        LOG(WARNING) << "{} in config unused."_format(root_prefix / path);
+        LOG(WARNING) << "{} in config unused."_format(
+            (root_prefix / path).to_string());
       }
     }
 

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rootba/pangolin/bal_image_overlay.hpp"
 
+#include <pangolin/display/default_font.h>
 #include <pangolin/gl/gldraw.h>
-#include <pangolin/gl/glfont.h>
 
 namespace rootba {
 
@@ -60,7 +60,6 @@ void BalImageOverlay::update(pangolin::ImageView& view,
   image_size_.setZero();
 
   // compute projections and store observations
-  int i = 0;
   for (const auto& lm : lmdb) {
     auto obs_it = lm.obs.find(frame_id);
     if (obs_it == lm.obs.end()) {
@@ -77,8 +76,13 @@ void BalImageOverlay::update(pangolin::ImageView& view,
 
     image_size_ = image_size_.cwiseMax(
         obs_it->second.pos.template cast<double>().cwiseAbs() * 2);
+  }
 
-    ++i;
+  if (image_size_.minCoeff() < options_.min_image_size) {
+    scale_factor_ = options_.min_image_size / image_size_.minCoeff();
+  }
+  if (image_size_.maxCoeff() * scale_factor_ > options_.max_image_size) {
+    scale_factor_ = options_.max_image_size / image_size_.maxCoeff();
   }
 
   // update image view background outlining image bounds + compute center_
@@ -87,7 +91,9 @@ void BalImageOverlay::update(pangolin::ImageView& view,
 }
 
 pangolin::ManagedImage<uint8_t> BalImageOverlay::make_background_image(
-    const Vec2d& image_size) {
+    Vec2d image_size) {
+  image_size *= scale_factor_;
+
   Vec2d background_size = image_size.array() + 20;  // border offset
   center_ = background_size / 2;
 
@@ -106,6 +112,10 @@ pangolin::ManagedImage<uint8_t> BalImageOverlay::make_background_image(
   return img;
 }
 
+void BalImageOverlay::set_options(const Options& options) {
+  options_ = options;
+}
+
 void BalImageOverlay::draw() const {
   glLineWidth(1.0);
   glEnable(GL_BLEND);
@@ -113,25 +123,27 @@ void BalImageOverlay::draw() const {
   // draw lines
   glColor3f(1.0, 0.0, 0.0);  // red
   for (size_t i = 0; i < kpts_detected_.size(); ++i) {
-    pangolin::glDrawLine(kpts_detected_.at(i) + center_,
-                         kpts_projected_.at(i) + center_);
+    pangolin::glDrawLine(kpts_detected_.at(i) * scale_factor_ + center_,
+                         kpts_projected_.at(i) * scale_factor_ + center_);
   }
 
   // draw projected
   glColor3f(1.0, 0.0, 0.0);  // red
   for (const auto& pos : kpts_projected_) {
-    pangolin::glDrawCirclePerimeter(pos + center_, 3.0);
+    pangolin::glDrawCirclePerimeter(pos * scale_factor_ + center_,
+                                    options_.circle_radius);
   }
 
   // draw detected not hosted
   glColor3f(0.0, 0.0, 1.0);  // blue
   for (const auto& pos : kpts_detected_) {
-    pangolin::glDrawCirclePerimeter(pos + center_, 3.0);
+    pangolin::glDrawCirclePerimeter(pos * scale_factor_ + center_,
+                                    options_.circle_radius);
   }
 
   // Info text
   glColor3f(1.0, 0.0, 0.0);  // red
-  pangolin::GlFont::I()
+  pangolin::default_font()
       .Text("Keypoints: %d total", kpts_detected_.size())
       .Draw(12, 20);
 }

@@ -95,7 +95,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # alignment. TLDR: Passing arch=native for all build types is currently the only
 # viable option to avoid suble bugs with Eigen.
 if(NOT CXX_MARCH)
-  set(CXX_MARCH native)
+  if(NOT APPLE OR NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(CXX_MARCH native)
+  else()
+    # NOTE: Newer versions of Clang / AppleClang support -march=native on Apple Silicon,
+    #       so at some point we can remove this workaround.
+    message(STATUS "Running on Apple ${CMAKE_SYSTEM_PROCESSOR}. Not defaulting to -march=native.")
+    set(CXX_MARCH "")
+  endif()
+endif()
+
+if(CXX_MARCH)
+  set(ROOTBA_MARCH_FLAG "-march=${CXX_MARCH}")
+else()
+  set(ROOTBA_MARCH_FLAG "")
 endif()
 
 # setup targets for dependencies

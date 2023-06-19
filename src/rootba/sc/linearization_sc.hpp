@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <mutex>
+
 #include <Eigen/Dense>
 #include <glog/logging.h>
 #include <tbb/blocked_range.h>
@@ -42,6 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <tbb/parallel_reduce.h>
 
 #include "rootba/bal/bal_problem.hpp"
+#include "rootba/qr/linearization_utils.hpp"
 #include "rootba/sc/landmark_block.hpp"
 #include "rootba/util/assert.hpp"
 #include "rootba/util/cast.hpp"
@@ -65,11 +68,14 @@ class LinearizationSC {
 
   using Options = typename LandmarkBlockSC<Scalar, POSE_SIZE>::Options;
 
-  LinearizationSC(BalProblem<Scalar>& bal_problem, const Options& options)
-      : options_(options), bal_problem_(bal_problem) {
-    size_t num_landmakrs = bal_problem_.landmarks().size();
-
-    landmark_blocks_.resize(num_landmakrs);
+  LinearizationSC(BalProblem<Scalar>& bal_problem, const Options& options,
+                  const bool enable_reduction_alg = true)
+      : options_(options),
+        bal_problem_(bal_problem),
+        num_cameras_(bal_problem_.cameras().size()),
+        pose_mutex_(num_cameras_) {
+    const size_t num_landmarks = bal_problem_.landmarks().size();
+    landmark_blocks_.resize(num_landmarks);
 
     auto body = [&](const tbb::blocked_range<size_t>& range) {
       for (size_t r = range.begin(); r != range.end(); ++r) {
@@ -78,10 +84,14 @@ class LinearizationSC {
       }
     };
 
-    tbb::blocked_range<size_t> range(0, num_landmakrs);
+    tbb::blocked_range<size_t> range(0, num_landmarks);
     tbb::parallel_for(range, body);
 
-    num_cameras_ = bal_problem_.cameras().size();
+    // H_pp_mutex_ won't be allocated when this class is inherited,
+    // only used in get_Hb
+    if (enable_reduction_alg && options_.reduction_alg == 1) {
+      H_pp_mutex_ = std::vector<std::mutex>(num_cameras_ * num_cameras_);
+    }
   };
 
   // return value `false` indicates numerical failure --> linearization at this
@@ -190,11 +200,21 @@ class LinearizationSC {
     tbb::parallel_for(range, body);
   }
 
+  /// compute scale and apply scaling in one go, e.g. for unit tests.
+  void compute_Jp_scale_and_scale_Jp_cols() {
+    const VecX Jp_scale2 = get_Jp_diag2();
+    const VecX Jp_scaling =
+        compute_jacobi_scaling(Jp_scale2, options_.jacobi_scaling_eps);
+    scale_Jp_cols(Jp_scaling);
+  }
+
   void set_pose_damping(const Scalar lambda) {
     ROOTBA_ASSERT(lambda >= 0);
 
     pose_damping_diagonal_ = lambda;
   }
+
+  inline bool has_pose_damping() const { return pose_damping_diagonal_ > 0; }
 
   void set_landmark_damping(const Scalar lambda) {
     ROOTBA_ASSERT(lambda >= 0);
@@ -210,6 +230,49 @@ class LinearizationSC {
   }
 
   void get_Hb(BlockSparseMatrix<Scalar>& H_pp, VecX& b_p) const {
+    if (options_.reduction_alg == 0) {
+      get_hb_r(H_pp, b_p);
+    } else if (options_.reduction_alg == 1) {
+      get_hb_f(H_pp, b_p);
+    } else {
+      LOG(FATAL) << "options_.reduction_alg " << options_.reduction_alg
+                 << " is not supported.";
+    }
+    H_pp.recompute_keys();
+  }
+
+  BlockDiagonalAccumulator<Scalar> get_jacobi() const {
+    BlockDiagonalAccumulator<Scalar> accum;
+    auto body = [&](const tbb::blocked_range<size_t>& range) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        const auto& lb = landmark_blocks_[r];
+        lb.add_Hpp(accum, pose_mutex_);
+      }
+    };
+    tbb::blocked_range<size_t> range(0, landmark_blocks_.size());
+    tbb::parallel_for(range, body);
+
+    if (has_pose_damping()) {
+      accum.add_diag(
+          num_cameras_, POSE_SIZE,
+          VecX::Constant(num_cameras_ * POSE_SIZE, pose_damping_diagonal_));
+    }
+
+    // TODO: double check including vs not including pose damping here in usage
+    // and make it clear in API; see also getJp_diag2
+    return accum;
+  }
+
+  const auto& get_landmark_blocks() const { return landmark_blocks_; }
+
+  auto& get_pose_mutex() const { return pose_mutex_; }
+
+  void print_block(const std::string& filename, size_t block_idx) {
+    landmark_blocks_[block_idx].printStorage(filename);
+  }
+
+ protected:
+  void get_hb_r(BlockSparseMatrix<Scalar>& H_pp, VecX& b_p) const {
     struct Reductor {
       Reductor(const std::vector<LandmarkBlockSC<Scalar, POSE_SIZE>>&
                    landmark_blocks,
@@ -251,27 +314,48 @@ class LinearizationSC {
     tbb::blocked_range<size_t> range(0, landmark_blocks_.size());
     tbb::parallel_reduce(range, r);
 
-    r.H_pp.add_diag(
-        num_cameras_, POSE_SIZE,
-        VecX::Constant(num_cameras_ * POSE_SIZE, pose_damping_diagonal_));
+    if (has_pose_damping()) {
+      r.H_pp.add_diag(
+          num_cameras_, POSE_SIZE,
+          VecX::Constant(num_cameras_ * POSE_SIZE, pose_damping_diagonal_));
+    }
 
     H_pp = std::move(r.H_pp);
     b_p = std::move(r.b_p);
   }
 
-  void print_block(const std::string& filename, size_t block_idx) {
-    landmark_blocks_[block_idx].printStorage(filename);
+  void get_hb_f(BlockSparseMatrix<Scalar>& H_pp, VecX& b_p) const {
+    ROOTBA_ASSERT(H_pp_mutex_.size() == num_cameras_ * num_cameras_);
+
+    // Fill H_pp and b_p
+    b_p.setZero(H_pp.rows);
+    auto body = [&](const tbb::blocked_range<size_t>& range) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        const auto& lb = landmark_blocks_[r];
+        lb.add_Hb(H_pp, b_p, H_pp_mutex_, pose_mutex_, num_cameras_);
+      }
+    };
+
+    tbb::blocked_range<size_t> range(0, landmark_blocks_.size());
+    tbb::parallel_for(range, body);
+
+    if (has_pose_damping()) {
+      H_pp.add_diag(
+          num_cameras_, POSE_SIZE,
+          VecX::Constant(num_cameras_ * POSE_SIZE, pose_damping_diagonal_));
+    }
   }
 
- protected:
   Options options_;
+  BalProblem<Scalar>& bal_problem_;
+  size_t num_cameras_;
+
+  mutable std::vector<std::mutex> H_pp_mutex_;
+  mutable std::vector<std::mutex> pose_mutex_;
 
   std::vector<LandmarkBlockSC<Scalar, POSE_SIZE>> landmark_blocks_;
-  BalProblem<Scalar>& bal_problem_;
 
   Scalar pose_damping_diagonal_ = 0;
-
-  size_t num_cameras_;
 };
 
 }  // namespace rootba

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@ void BalMapDisplay::update(const BalProblem<Scalar>& bal_problem) {
 }
 
 void BalMapDisplay::draw(FrameIdx selected_frame,
-                         const BalMapDisplay::BalMapDisplayOptions& options) {
+                         const BalMapDisplay::Options& options) {
   for (int i = 0; i < signed_cast(frames_.size()); ++i) {
     const bool is_selected = i == selected_frame;
     frames_.at(i)->draw(is_selected, options);
@@ -105,7 +105,7 @@ void BalFrameDisplay::update(const BalProblem<Scalar>& bal_problem) {
 }
 
 void BalFrameDisplay::draw(bool selected,
-                           const BalMapDisplay::BalMapDisplayOptions& options) {
+                           const BalMapDisplay::Options& options) {
   draw_camera(selected, options);
 }
 
@@ -122,8 +122,8 @@ bool BalMapDisplay::update_buffers() {
   return true;
 }
 
-void BalFrameDisplay::draw_camera(
-    bool selected, const BalMapDisplay::BalMapDisplayOptions& options) {
+void BalFrameDisplay::draw_camera(bool selected,
+                                  const BalMapDisplay::Options& options) {
   if (selected) {
     render_camera(T_w_c_.matrix(), options.cam_weight, G_COLOR_SELECTED,
                   options.cam_size * G_CAM_SELECTED_SCALE);
@@ -133,8 +133,8 @@ void BalFrameDisplay::draw_camera(
   }
 }
 
-void BalMapDisplay::draw_pointcloud(
-    bool selected, const BalMapDisplay::BalMapDisplayOptions& options) {
+void BalMapDisplay::draw_pointcloud(bool selected,
+                                    const BalMapDisplay::Options& options) {
   if (vertex_buffer_.size() == 0) {
     return;
   }

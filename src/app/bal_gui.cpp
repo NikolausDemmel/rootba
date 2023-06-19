@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -81,6 +81,10 @@ int main(int argc, char** argv) {
   pangolin::Var<int> point_size("ui.point_size", 2, 1, 5);
   pangolin::Var<int> cam_weight("ui.cam_weight", 2, 1, 5);
   pangolin::Var<double> cam_size("ui.cam_size", 1.5, 0.5, 5);
+
+  pangolin::Var<int> min_image_size("ui.min_image_size", 500, 100, 2000);
+  pangolin::Var<int> max_image_size("ui.max_image_size", 2000, 100, 2000);
+  pangolin::Var<double> circle_radius("ui.circle_radius", 3.0, 0.5, 20.0);
 
   Button optimize_ceres("ui.optimize", [&]() {
     // print options
@@ -171,6 +175,13 @@ int main(int argc, char** argv) {
       show_frame = std::min(show_frame.Get(), bal_problem.num_cameras() - 1);
       show_frame = std::max(show_frame.Get(), 0);
 
+      update_image_overlay = true;
+    }
+
+    if (min_image_size.GuiChanged() || max_image_size.GuiChanged() ||
+        circle_radius.GuiChanged()) {
+      image_overlay.set_options(
+          {min_image_size, max_image_size, circle_radius});
       update_image_overlay = true;
     }
 

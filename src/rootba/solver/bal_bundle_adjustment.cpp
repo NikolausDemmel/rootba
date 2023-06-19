@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rootba/solver/bal_bundle_adjustment.hpp"
 
+#include <cmath>
 #include <set>
-#include <thread>
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -96,6 +96,9 @@ void finish_solve(SolverSummary& summary, const SolverOptions& options) {
     case SolverOptions::SolverType::SCHUR_COMPLEMENT:
       summary.solver_type = "bal_sc";
       break;
+    case SolverOptions::SolverType::POWER_SCHUR_COMPLEMENT:
+      summary.solver_type = "bal_power_sc";
+      break;
     default:
       LOG(FATAL) << "unreachable";
   }
@@ -115,7 +118,7 @@ void finish_solve(SolverSummary& summary, const SolverOptions& options) {
   // CHECK_LE(summary.final_cost.valid.error, summary.initial_cost.valid.error);
 
   summary.num_successful_steps =
-      -1;  // don't count it 0, for which step_is_successful == true
+      -1;  // don't count iteration 0, for which step_is_successful == true
   summary.num_unsuccessful_steps = 0;
   for (const auto& it : summary.iterations) {
     if (it.step_is_successful) {
@@ -125,10 +128,7 @@ void finish_solve(SolverSummary& summary, const SolverOptions& options) {
     }
   }
 
-  summary.logging_time_in_seconds = 0;
-  summary.preprocessor_time_in_seconds = 0;
-  summary.postprocessor_time_in_seconds = 0;
-  summary.total_time_in_seconds = summary.minimizer_time_in_seconds;
+  summary.logging_time_in_seconds = 0;  // currently this is not computed
 
   summary.linear_solver_time_in_seconds = 0;
   summary.residual_evaluation_time_in_seconds = 0;
@@ -149,11 +149,8 @@ void finish_solve(SolverSummary& summary, const SolverOptions& options) {
     }
   }
 
-  // FIXME: this doesn't respect cgroup cpusets like on slurm
-  // (TbbConcurrencyObserver does seem to work as expected though, and create
-  // only as many threads as the user can use concurrently). --> check all uses
-  // of hardware_concurrency() in the code base
-  summary.num_threads_available = std::thread::hardware_concurrency();
+  // Effective available hardware threads (respecting process limits).
+  summary.num_threads_available = tbb_task_arena_max_concurrency();
 }
 
 // compute actual cost difference for deciding if LM step was successful; this
@@ -233,7 +230,9 @@ void check_options(const SolverOptions& options) {
   if (options.preconditioner_type !=
           SolverOptions::PreconditionerType::JACOBI &&
       options.preconditioner_type !=
-          SolverOptions::PreconditionerType::SCHUR_JACOBI) {
+          SolverOptions::PreconditionerType::SCHUR_JACOBI &&
+      options.preconditioner_type !=
+          SolverOptions::PreconditionerType::POWER_SCHUR_COMPLEMENT) {
     LOG(FATAL) << "predonditioner {} not implemented"_format(
         wise_enum::to_string(options.preconditioner_type));
   }
@@ -255,6 +254,10 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
   TbbConcurrencyObserver concurrency_observer;
 
   Timer timer_total;
+
+  // preprocessor time includes allocating Linearizor (allocating landmark
+  // blocks, etc); everything until the minimizer loop starts.
+  Timer timer_preprocessor;
 
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
@@ -278,6 +281,10 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
   std::unique_ptr<Linearizor<Scalar>> linearizor =
       Linearizor<Scalar>::create(bal_problem, solver_options, &summary);
+
+  // minmizer time starts after preprocessing
+  summary.preprocessor_time_in_seconds = timer_preprocessor.elapsed();
+  Timer timer_minimizer;
 
   bool terminated = false;
 
@@ -399,7 +406,12 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
       linearizor->compute_error(ri2);
       it_summary.cost = ri2;
 
-      if (!ri2.is_numerically_valid) {
+      if (!std::isfinite(l_diff)) {
+        it_summary.step_is_valid = false;
+        it_summary.step_is_successful = false;
+        std::cout << "\t[EVAL] failed to apply update: l_diff {}"_format(
+            l_diff);
+      } else if (!ri2.is_numerically_valid) {
         it_summary.step_is_valid = false;
         it_summary.step_is_successful = false;
         std::cout << "\t[EVAL] failed to evaluate cost: {}"_format(
@@ -407,8 +419,8 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
                 ri2, solver_options.use_projection_validity_check()));
       } else {
         // compute "ri - ri2", depending on 'optimized_cost' config
-        Scalar f_diff(
-            compute_cost_decrease(ri, ri2, solver_options.optimized_cost));
+        Scalar f_diff =
+            compute_cost_decrease(ri, ri2, solver_options.optimized_cost);
 
         // ... only in case of ERROR_VALID_AVG, do we need to normalize the
         // model cost by the number of observations. The model assumes the
@@ -515,7 +527,9 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
         "{} iterations"_format(max_lm_iter);
   }
 
-  summary.minimizer_time_in_seconds = timer_total.elapsed();
+  summary.minimizer_time_in_seconds = timer_minimizer.elapsed();
+  summary.postprocessor_time_in_seconds = 0;  // currently no postprocessing
+  summary.total_time_in_seconds = timer_total.elapsed();
 
   summary.num_threads_given = solver_options.num_threads;
   summary.num_threads_used = concurrency_observer.get_peak_concurrency();

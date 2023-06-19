@@ -5,7 +5,7 @@
 ## This file is part of the RootBA project.
 ## https://github.com/NikolausDemmel/rootba
 ##
-## Copyright (c) 2021, Nikolaus Demmel.
+## Copyright (c) 2021-2023, Nikolaus Demmel.
 ## All rights reserved.
 ##
 
@@ -19,7 +19,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 FOLDER="${1:-$SCRIPT_DIR/../src}"
 
-CLANG_FORMAT_COMMANDS="clang-format-12 clang-format-11 clang-format-10 clang-format"
+CLANG_FORMAT_COMMANDS="clang-format-17 clang-format-16 clang-format-15 clang-format-14 clang-format-13 clang-format-12 clang-format-11 clang-format-10 clang-format"
 
 # find the first available command:
 for CMD in $CLANG_FORMAT_COMMANDS; do

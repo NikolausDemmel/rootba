@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <fstream>
+#include <mutex>
 
 #include <Eigen/Dense>
 
@@ -65,6 +66,12 @@ class LandmarkBlockSC {
     // ceres uses 1.0 / (1.0 + sqrt(SquaredColumnNorm))
     // we use 1.0 / (eps + sqrt(SquaredColumnNorm))
     Scalar jacobi_scaling_eps = 1.0;
+
+    // 0: parallel_reduce (may use more memory)
+    // 1: parallel_for with mutex
+    int reduction_alg = 1;
+
+    size_t power_order = 20;
   };
 
   enum State { UNINITIALIZED = 0, ALLOCATED, NUMERICAL_FAILURE, LINEARIZED };
@@ -209,21 +216,37 @@ class LandmarkBlockSC {
 
   inline void set_landmark_damping(Scalar lambda) { lambda_ = lambda; }
 
-  // Fill the reduced H, b linear system.
+  inline size_t num_poses() const { return pose_idx_.size(); }
+
+  inline const std::vector<size_t>& get_pose_idx() const { return pose_idx_; }
+
+  inline auto get_Jli(const size_t obs_idx) const {
+    return storage_.template block<2, 3>(2 * obs_idx, lm_idx_);
+  }
+
+  inline auto get_Jl() const {
+    return storage_.template middleCols<3>(lm_idx_);
+  }
+
+  inline auto get_Jpi(const size_t obs_idx) const {
+    return storage_.template block<2, POSE_SIZE>(2 * obs_idx, 0);
+  }
+
+  inline auto get_Hll_inv() const { return Hll_inv_; }
+
+  // Fill the explicit reduced H, b linear system by parallel_reduce
   inline void add_Hb(BlockSparseMatrix<Scalar>& accu, VecX& b) const {
     ROOTBA_ASSERT(state_ == LINEARIZED);
 
     // Compute landmark-landmark block plus inverse
-    Mat3 H_ll;
-    Mat3 H_ll_inv;
-    Vec3 H_ll_inv_bl;
+    Vec3 Hll_inv_bl;
     {
       auto Jl = storage_.block(0, lm_idx_, num_rows_, 3);
-      H_ll = Jl.transpose() * Jl;
-      H_ll.diagonal().array() += lambda_;
-      H_ll_inv = H_ll.inverse();
+      Hll_inv_ = Jl.transpose() * Jl;
+      Hll_inv_.diagonal().array() += lambda_;
+      Hll_inv_ = Hll_inv_.inverse().eval();
 
-      H_ll_inv_bl = H_ll_inv * Jl.transpose() * storage_.col(res_idx_);
+      Hll_inv_bl = Hll_inv_ * (Jl.transpose() * storage_.col(res_idx_));
     }
 
     // Add pose-pose blocks and
@@ -234,8 +257,8 @@ class LandmarkBlockSC {
       auto Jl_i = storage_.template block<2, 3>(2 * i, lm_idx_);
       auto r_i = storage_.template block<2, 1>(2 * i, res_idx_);
 
-      MatX H_pp = Jp_i.transpose() * Jp_i;
-      accu.add(cam_idx_i, cam_idx_i, std::move(H_pp));
+      MatX Hpp = Jp_i.transpose() * Jp_i;
+      accu.add(cam_idx_i, cam_idx_i, std::move(Hpp));
 
       // Schur complement blocks
       for (size_t j = 0; j < pose_idx_.size(); j++) {
@@ -243,22 +266,150 @@ class LandmarkBlockSC {
         auto Jp_j = storage_.template block<2, POSE_SIZE>(2 * j, 0);
         auto Jl_j = storage_.template block<2, 3>(2 * j, lm_idx_);
 
-        MatX H_pl_H_ll_inv_H_lp =
-            -Jp_i.transpose() * Jl_i * H_ll_inv * Jl_j.transpose() * Jp_j;
+        MatX Hpl_Hll_inv_Hlp =
+            -Jp_i.transpose() * (Jl_i * (Hll_inv_ * (Jl_j.transpose() * Jp_j)));
 
-        accu.add(cam_idx_i, cam_idx_j, std::move(H_pl_H_ll_inv_H_lp));
+        accu.add(cam_idx_i, cam_idx_j, std::move(Hpl_Hll_inv_Hlp));
       }
 
       // add blocks to b
       b.template segment<POSE_SIZE>(cam_idx_i * POSE_SIZE) +=
-          Jp_i.transpose() * (r_i - Jl_i * H_ll_inv_bl);
+          Jp_i.transpose() * (r_i - Jl_i * Hll_inv_bl);
+    }
+  }
+
+  // Fill the explicit reduced H, b linear system by parallel_for and mutex
+  inline void add_Hb(BlockSparseMatrix<Scalar>& accu, VecX& b,
+                     std::vector<std::mutex>& Hpp_mutex,
+                     std::vector<std::mutex>& pose_mutex,
+                     const size_t num_cam) const {
+    ROOTBA_ASSERT(state_ == LINEARIZED);
+
+    // Compute landmark-landmark block plus inverse
+    Vec3 Hll_inv_bl;
+    {
+      auto Jl = storage_.block(0, lm_idx_, num_rows_, 3);
+      Hll_inv_ = Jl.transpose() * Jl;
+      Hll_inv_.diagonal().array() += lambda_;
+      Hll_inv_ = Hll_inv_.inverse().eval();
+
+      Hll_inv_bl = Hll_inv_ * (Jl.transpose() * storage_.col(res_idx_));
+    }
+
+    // Add pose-pose blocks and
+    for (size_t i = 0; i < pose_idx_.size(); i++) {
+      const size_t cam_idx_i = pose_idx_[i];
+
+      auto Jp_i = storage_.template block<2, POSE_SIZE>(2 * i, 0);
+      auto Jl_i = storage_.template block<2, 3>(2 * i, lm_idx_);
+      auto r_i = storage_.template block<2, 1>(2 * i, res_idx_);
+
+      // TODO: check (Niko: not sure what we wanted to check here...)
+
+      {
+        MatX Hpp = Jp_i.transpose() * Jp_i;
+        std::scoped_lock lock(Hpp_mutex.at(cam_idx_i * num_cam + cam_idx_i));
+        accu.add(cam_idx_i, cam_idx_i, std::move(Hpp));
+      }
+
+      // Schur complement blocks
+      for (size_t j = 0; j < pose_idx_.size(); j++) {
+        const size_t cam_idx_j = pose_idx_[j];
+        auto Jp_j = storage_.template block<2, POSE_SIZE>(2 * j, 0);
+        auto Jl_j = storage_.template block<2, 3>(2 * j, lm_idx_);
+
+        {
+          MatX Hpl_Hll_inv_Hlp =
+              -Jp_i.transpose() *
+              (Jl_i * (Hll_inv_ * (Jl_j.transpose() * Jp_j)));
+
+          std::scoped_lock lock(Hpp_mutex.at(cam_idx_i * num_cam + cam_idx_j));
+          accu.add(cam_idx_i, cam_idx_j, std::move(Hpl_Hll_inv_Hlp));
+        }
+      }
+
+      // add blocks to b
+      {
+        std::scoped_lock lock(pose_mutex.at(cam_idx_i));
+        b.template segment<POSE_SIZE>(cam_idx_i * POSE_SIZE) +=
+            Jp_i.transpose() * (r_i - Jl_i * Hll_inv_bl);
+      }
+    }
+  }
+
+  // Compute b and cache Hll_inv for solving RCS, and optionally compute Hpp and
+  // the diagonal blocks of H.
+  inline void stage(VecX& b, RowMatX* Hpp,
+                    BlockDiagonalAccumulator<Scalar>* H_diag,
+                    std::vector<std::mutex>* pose_mutex = nullptr) const {
+    // fill Hll_inv: (Jl'Jl + lm_lambda * I)^-1
+    const auto Jl = storage_.block(0, lm_idx_, num_rows_, 3);
+    Hll_inv_ = Jl.transpose() * Jl;
+    Hll_inv_.diagonal().array() += lambda_;
+    Hll_inv_ = Hll_inv_.inverse().eval();
+    const Vec3 Hll_inv_bl =
+        Hll_inv_ * (Jl.transpose() * storage_.col(res_idx_));
+
+    // Compute different componments depending on the given parameters
+    if (H_diag) {
+      // b, Hll_inv_bl, Hpp, and H_diag (optional)
+      add_Hpp_H_diag_b(b, Hll_inv_bl, Hpp, *H_diag, pose_mutex);
+    } else if (Hpp) {
+      // b, Hll_inv_bl, and Hpp (optional)
+      add_Hpp_b(b, Hll_inv_bl, *Hpp, pose_mutex);
+    } else {
+      // b, Hll_inv_bl,
+      add_b(b, Hll_inv_bl, pose_mutex);
+    }
+  }
+
+  inline void add_Hpp(BlockDiagonalAccumulator<Scalar>& Hpp,
+                      std::vector<std::mutex>& pose_mutex) const {
+    ROOTBA_ASSERT(state_ == LINEARIZED);
+
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const size_t cam_idx = pose_idx_[i];
+      const auto Jp = storage_.template block<2, POSE_SIZE>(2 * i, 0);
+      const MatX tmp = Jp.transpose() * Jp;
+      {
+        std::scoped_lock lock(pose_mutex[cam_idx]);
+        Hpp.add(cam_idx, tmp);
+      }
+    }
+  }
+
+  inline void add_Jp_x(VecX& res, const VecX& x) const {
+    ROOTBA_ASSERT(state_ == LINEARIZED);
+
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const auto u = get_Jpi(i);
+      const auto v = x.template segment<POSE_SIZE>(pose_idx_[i] * POSE_SIZE);
+      res.template segment<2>(i * 2) = u * v;
+    }
+  }
+
+  inline void add_JpT_x(VecX& res, const VecX& x,
+                        std::vector<std::mutex>* pose_mutex = nullptr) const {
+    ROOTBA_ASSERT(state_ == LINEARIZED);
+
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const auto u = get_Jpi(i);
+      const auto v = x.template segment<2>(i * 2);
+      const size_t idx = pose_idx_[i];
+
+      if (pose_mutex) {
+        std::scoped_lock lock((*pose_mutex)[idx]);
+        res.template segment<POSE_SIZE>(idx * POSE_SIZE) += u.transpose() * v;
+      } else {
+        res.template segment<POSE_SIZE>(idx * POSE_SIZE) += u.transpose() * v;
+      }
     }
   }
 
   void back_substitute(const VecX& pose_inc, Scalar& l_diff) {
     ROOTBA_ASSERT(state_ == LINEARIZED);
 
-    Mat3 H_ll = Mat3::Zero();
+    Mat3 Hll = Mat3::Zero();
     Vec3 tmp = Vec3::Zero();
     VecX J_inc;
     J_inc.setZero(num_rows_);
@@ -271,7 +422,7 @@ class LandmarkBlockSC {
       auto Jl_i = storage_.template block<2, 3>(2 * i, lm_idx_);
       auto r_i = storage_.template block<2, 1>(2 * i, res_idx_);
 
-      H_ll += Jl_i.transpose() * Jl_i;
+      Hll += Jl_i.transpose() * Jl_i;
 
       auto p_inc = pose_inc.template segment<POSE_SIZE>(cam_idx_i * POSE_SIZE);
 
@@ -281,8 +432,8 @@ class LandmarkBlockSC {
 
     // TODO: store additionally "Hllinv" (inverted with lambda), so we don't
     // need lambda in the interface
-    H_ll.diagonal().array() += lambda_;
-    Vec3 inc = -H_ll.inverse() * tmp;
+    Hll.diagonal().array() += lambda_;
+    Vec3 inc = -Hll.inverse() * tmp;
 
     // Add landmark jacobian cost change
     J_inc += storage_.block(0, lm_idx_, num_rows_, 3) * inc;
@@ -307,10 +458,86 @@ class LandmarkBlockSC {
   }
 
  protected:
+  inline void add_b(VecX& b, const Vec3& Hll_inv_bl,
+                    std::vector<std::mutex>* pose_mutex) const {
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const size_t cam_idx = pose_idx_[i];
+      const auto Jp = storage_.template block<2, POSE_SIZE>(2 * i, 0);
+      const auto Jl = storage_.template block<2, 3>(2 * i, lm_idx_);
+      const auto r = storage_.template block<2, 1>(2 * i, res_idx_);
+
+      const VecX b_tmp = Jp.transpose() * (r - Jl * Hll_inv_bl);
+      if (pose_mutex) {
+        std::scoped_lock lock((*pose_mutex)[cam_idx]);
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+      } else {
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+      }
+    }
+  }
+
+  inline void add_Hpp_b(VecX& b, const Vec3& Hll_inv_bl, RowMatX& Hpp,
+                        std::vector<std::mutex>* pose_mutex) const {
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const size_t cam_idx = pose_idx_[i];
+      const auto Jp = storage_.template block<2, POSE_SIZE>(2 * i, 0);
+      const auto Jl = storage_.template block<2, 3>(2 * i, lm_idx_);
+      const auto r = storage_.template block<2, 1>(2 * i, res_idx_);
+
+      const VecX b_tmp = Jp.transpose() * (r - Jl * Hll_inv_bl);
+      const RowMatX Hpp_tmp = Jp.transpose() * Jp;
+      if (pose_mutex) {
+        std::scoped_lock lock((*pose_mutex)[cam_idx]);
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+        Hpp.template block<POSE_SIZE, POSE_SIZE>(cam_idx * POSE_SIZE, 0) +=
+            Hpp_tmp;
+      } else {
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+        Hpp.template block<POSE_SIZE, POSE_SIZE>(cam_idx * POSE_SIZE, 0) +=
+            Hpp_tmp;
+      }
+    }
+  }
+
+  inline void add_Hpp_H_diag_b(VecX& b, const Vec3& Hll_inv_bl, RowMatX* Hpp,
+                               BlockDiagonalAccumulator<Scalar>& H_diag,
+                               std::vector<std::mutex>* pose_mutex) const {
+    for (size_t i = 0; i < pose_idx_.size(); ++i) {
+      const size_t cam_idx = pose_idx_[i];
+      const auto Jp = storage_.template block<2, POSE_SIZE>(2 * i, 0);
+      const auto Jl = storage_.template block<2, 3>(2 * i, lm_idx_);
+      const auto r = storage_.template block<2, 1>(2 * i, res_idx_);
+
+      const VecX b_tmp = Jp.transpose() * (r - Jl * Hll_inv_bl);
+      const auto Jp_t_Jl = Jp.transpose() * Jl;
+
+      const RowMatX Hpp_tmp = Jp.transpose() * Jp;
+      MatX H_diag_tmp = Hpp_tmp - Jp_t_Jl * (Hll_inv_ * Jp_t_Jl.transpose());
+      if (pose_mutex) {
+        std::scoped_lock lock((*pose_mutex)[cam_idx]);
+
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+        H_diag.add(cam_idx, std::move(H_diag_tmp));
+        if (Hpp) {
+          Hpp->template block<POSE_SIZE, POSE_SIZE>(cam_idx * POSE_SIZE, 0) +=
+              Hpp_tmp;
+        }
+      } else {
+        b.template segment<POSE_SIZE>(cam_idx * POSE_SIZE) += b_tmp;
+        H_diag.add(cam_idx, std::move(H_diag_tmp));
+        if (Hpp) {
+          Hpp->template block<POSE_SIZE, POSE_SIZE>(cam_idx * POSE_SIZE, 0) +=
+              Hpp_tmp;
+        }
+      }
+    }
+  }
+
   // Dense storage for pose Jacobians, padding, landmark Jacobians and
-  // residuals [J_p (all jacobians in one column) | J_l | res]
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      storage_;
+  // residuals [Jp (all jacobians in one column) | Jl | res]
+  RowMatX storage_;
+  // The value is computed and cache while preparing the RCS (H, b)
+  mutable Mat3 Hll_inv_;
 
   Vec3 Jl_col_scale;
   Scalar lambda_ = 0;

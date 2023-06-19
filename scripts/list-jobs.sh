@@ -5,7 +5,7 @@
 ## This file is part of the RootBA project.
 ## https://github.com/NikolausDemmel/rootba
 ##
-## Copyright (c) 2021, Nikolaus Demmel.
+## Copyright (c) 2021-2023, Nikolaus Demmel.
 ## All rights reserved.
 ##
 
@@ -27,8 +27,8 @@ set -o errexit -o pipefail
 # we need GNU getopt...
 GETOPT=getopt
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [ -f /usr/local/opt/gnu-getopt/bin/getopt ]; then
-        GETOPT="/usr/local/opt/gnu-getopt/bin/getopt"
+    if [ -f "$(brew --prefix gnu-getopt)/bin/getopt" ]; then
+        GETOPT="$(brew --prefix gnu-getopt)/bin/getopt"
     fi
 fi
 
@@ -39,7 +39,7 @@ usage() { echo "Usage: `basename $0` DIRNAME [DIRNAME ...] [-s|--short] [-o|--on
 # -use return value from ${PIPESTATUS[0]}, because ! hosed $?
 ! "$GETOPT" --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
-    echo 'I’m sorry, `getopt --test` failed in this environment.'
+    echo "I'm sorry, \`getopt --test\` failed in this environment."
     exit 1
 fi
 

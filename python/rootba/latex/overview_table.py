@@ -4,7 +4,7 @@
 # This file is part of the RootBA project.
 # https://github.com/NikolausDemmel/rootba
 #
-# Copyright (c) 2021, Nikolaus Demmel.
+# Copyright (c) 2021-2023, Nikolaus Demmel.
 # All rights reserved.
 #
 import os
@@ -48,6 +48,8 @@ class OverviewTable(ExperimentsContainer):
                 lambda l: int(l._static.problem_info.per_lm_obs.min),
             '#obs-per-lm-max':
                 lambda l: int(l._static.problem_info.per_lm_obs.max),
+            'rcs-sparsity':
+                lambda l: "{:.0f}%".format(l._static.problem_info.rcs_sparsity * 100),
         }
 
         seq_names = sorted(set(

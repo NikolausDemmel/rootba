@@ -72,14 +72,14 @@ display_name = "$\\sqrt{BA}$-64"
 pattern = "01_tutorial/*/1_*/*qr_double*"
 
 [[experiments]]
-name = "sc_float"
+name = "explicitsc_float"
 display_name = "explicit-32"
-pattern = "01_tutorial/*/1_*/*sc_float*"
+pattern = "01_tutorial/*/1_*/*explicitsc_float*"
 
 [[experiments]]
-name = "sc_double"
+name = "explicitsc_double"
 display_name = "explicit-64"
-pattern = "01_tutorial/*/1_*/*sc_double*"
+pattern = "01_tutorial/*/1_*/*explicitsc_double*"
 
 
 ########################################################################
@@ -106,10 +106,10 @@ pattern = "01_tutorial/*/1_*/*sc_double*"
 EXPERIMENTS = [
     "qr_float",
     "qr_double",
-    "sc_float",
-    "sc_double",
+    "explicitsc_float",
+    "explicitsc_double",
 ]
-RELATIVE_TO_EXPERIMENT = "sc_double"
+RELATIVE_TO_EXPERIMENT = "explicitsc_double"
 
 [[substitutions]]
 TOLERANCES = [1e-1, 1e-2, 1e-3]

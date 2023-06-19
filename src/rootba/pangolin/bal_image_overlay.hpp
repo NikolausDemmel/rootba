@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,15 @@ namespace rootba {
 
 class BalImageOverlay {
  public:
+  struct Options {
+    int min_image_size = 500;
+    int max_image_size = 2000;
+    double circle_radius = 3.0;
+  };
+
   BalImageOverlay();
+
+  void set_options(const Options& options);
 
   template <typename Scalar>
   void update(pangolin::ImageView& view, const BalProblem<Scalar>& bal_problem,
@@ -53,13 +61,15 @@ class BalImageOverlay {
   void draw() const;
 
  private:
-  pangolin::ManagedImage<uint8_t> make_background_image(
-      const Vec2d& image_size);
+  pangolin::ManagedImage<uint8_t> make_background_image(Vec2d image_size);
+
+  Options options_;
 
   // for current image
   FrameIdx frame_id_;
-  Vec2d image_size_;  //!< image size w/o border
-  Vec2d center_;      //!< center of image w/ border
+  Vec2d image_size_;     //!< image size w/o border
+  Vec2d center_;         //!< center of image w/ border
+  double scale_factor_;  //!< scale factor for image coordindates
 
   std::vector<Vec2d> kpts_detected_;
   std::vector<Vec2d> kpts_projected_;

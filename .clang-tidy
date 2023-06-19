@@ -23,27 +23,27 @@ CheckOptions:
   - key:    readability-identifier-naming.ParameterCase
     value:  lower_case
   - key:    readability-identifier-naming.ParameterIgnoredRegexp
-    value:  '[A-Z]|Q[12]T.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*'
   - key:    readability-identifier-naming.VariableCase
     value:  lower_case
   - key:    readability-identifier-naming.VariableIgnoredRegexp
-    value:  '[A-Z]|Q[12]T.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*'
   - key:    readability-identifier-naming.MemberCase
     value:  lower_case
   - key:    readability-identifier-naming.PublicMemberCase
     value:  lower_case
   - key:    readability-identifier-naming.PublicMemberIgnoredRegexp
-    value:  '[A-Z]|Q[12]T.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
   - key:    readability-identifier-naming.ProtectedMemberCase
     value:  lower_case
   - key:    readability-identifier-naming.ProtectedMemberSuffix
     value:  _
   - key:    readability-identifier-naming.ProtectedMemberIgnoredRegexp
-    value:  '[A-Z]|Q[12]T.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
   - key:    readability-identifier-naming.PrivateMemberCase
     value:  lower_case
   - key:    readability-identifier-naming.PrivateMemberIgnoredRegexp
-    value:  '[A-Z]|Q[12]T.*|[JH]_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*|_meta.*'
   - key:    readability-identifier-naming.PrivateMemberSuffix
     value:  _
 
@@ -53,7 +53,7 @@ CheckOptions:
   - key:    readability-identifier-naming.MethodCase
     value:  lower_case
   - key:    readability-identifier-naming.MethodIgnoredRegexp
-    value:  '_accept.*|_load|_print|_meta.*|.*_Hb|add_Q[12]T.*|.*Q[12]T.*|.*_J[pl].*'
+    value:  '_accept.*|_load|_print|_meta.*|.*[QHJR].*'
 
 # Constants
   - key:    readability-identifier-naming.ConstantPrefix
@@ -71,13 +71,13 @@ CheckOptions:
   - key:    readability-identifier-naming.ConstantParameterCase
     value:  lower_case
   - key:    readability-identifier-naming.ConstantParameterIgnoredRegexp
-    value:  'Q[12]T.*|[JH]_.*|T_[a-z]+_[a-z]+.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*'
   - key:    readability-identifier-naming.LocalConstantParameterPrefix
     value:  ''
   - key:    readability-identifier-naming.LocalConstantCase
     value:  lower_case
   - key:    readability-identifier-naming.LocalConstantIgnoredRegexp
-    value:  'Q[12]T.*|[JH]_.*|T_[a-z]+_[a-z]+.*'
+    value:  '[A-Z]|Q[12]T.*|[JH][pl]*_.*|J[an]|T_[a-z]+_[a-z]+.*'
   - key:    readability-identifier-naming.ConstexprVariablePrefix
     value:  ''
   - key:    readability-identifier-naming.ConstexprVariableCase

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "rootba/bal/bal_bundle_adjustment_helper.hpp"
 
-#include "rootba/util/test_utils.hpp"
+#include "rootba/testing/test_jacobian.hpp"
+#include "rootba/testing/test_types.hpp"
 
 namespace rootba {
 

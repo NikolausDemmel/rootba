@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,6 @@ class LinearOperator {
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
   virtual ~LinearOperator() = default;
-  ;
 
   virtual size_t num_cols() const = 0;
   virtual VecX right_multiply(const VecX& x) const = 0;
@@ -62,7 +61,6 @@ class Preconditioner {
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
 
   virtual ~Preconditioner() = default;
-  ;
 
   virtual void solve_assign(const VecX& b, VecX& x) const = 0;
 };

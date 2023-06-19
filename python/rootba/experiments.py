@@ -4,7 +4,7 @@
 # This file is part of the RootBA project.
 # https://github.com/NikolausDemmel/rootba
 #
-# Copyright (c) 2021, Nikolaus Demmel.
+# Copyright (c) 2021-2023, Nikolaus Demmel.
 # All rights reserved.
 #
 import os
@@ -578,8 +578,9 @@ def load_experiments_config(path, args=None):
                 spec.problem_size_variants = spec.memory_variants
                 del spec["memory_variants"]
             spec.setdefault("problem_size_variants", ["cam", "lm", "obs"])
-            spec.setdefault("bal_cost_include", ["cost_time", "cost_it", "tr_radius", "inner_it", "memory"])
-            spec.setdefault("tolerances", [0.01, 0.001, 0.00001])
+            spec.setdefault("bal_cost_include",
+                            ["cost_time", "cost_it", "tr_radius", "inner_it", "memory", "cost_time_without_preprocess"])
+            spec.setdefault("tolerances", [0.1, 0.01, 0.001])
             spec.setdefault("plot_tolerances", False)
             spec.setdefault("best_fit_line", True)
             spec.setdefault("reverse_zorder", False)
@@ -589,6 +590,16 @@ def load_experiments_config(path, args=None):
             spec.setdefault("suptitle", None)
             spec.setdefault("rotate2d", 0)
             spec.setdefault("trajectory_axes", "xy")
+            spec.setdefault("subtract_preprocessor_time", False)
+            spec.setdefault("color_by_relative_runtime", True)
+            spec.setdefault("bal_bar_tolerances", ["it-1"])
+            spec.setdefault("plot_total_runtime", True)
+            spec.setdefault("xticks_show_iterations", True)
+            spec.setdefault("xticks_color_failed", True)
+            spec.setdefault("xticks_rotate", 0)
+            spec.setdefault("xticks_horizontalalignment", "center")
+            spec.setdefault("plot_inner_iterations", True)
+            spec.setdefault("plot_inner_iterations_outer_iterations", True)
         elif spec["class"] == "overview_table":
             spec.setdefault("export_latex", None)
 

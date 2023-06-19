@@ -4,6 +4,7 @@ target_sources(rootba_qr
   PUBLIC
     landmark_block.hpp
     linearization_qr.hpp
+    linearization_utils.hpp
   PRIVATE
     landmark_block.cpp
     landmark_block_base.hpp
@@ -38,6 +39,7 @@ if(ROOTBA_ENABLE_TESTING)
       linearization_qr.test.cpp
     LINK_LIBRARIES
       rootba_qr
+      rootba_testing
   )
 
 endif()

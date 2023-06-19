@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -100,6 +100,9 @@ struct IterationSummary {
   // Current iteration number. Initialization is iteration 0.
   int iteration = 0;
 
+  // Currently used solver, it can be switched only for hybrid solver
+  std::string linear_solver_type;
+
   // Step was numerically valid, i.e., all values are finite and the
   // step reduces the value of the linearized model.
   //
@@ -167,7 +170,7 @@ struct IterationSummary {
   // iteration.
   double iteration_time_in_seconds = 0.0;
 
-  // Time (in seconds) since the user called Solve().
+  // Time (in seconds) since the user called optimize().
   double cumulative_time_in_seconds = 0.0;
 
   // Time (in seconds) spent to compute the LM step (scale_landmark_jacobian +
@@ -192,11 +195,13 @@ struct IterationSummary {
       0.0;  //!< may be part of stage 1 if JACOBI
   double compute_gradient_time_in_seconds = 0.0;
   double stage2_time_in_seconds = 0.0;
+  double prepare_time_in_seconds = 0.0;
 
   // ----- post stage 2 -----
 
   double solve_reduced_system_time_in_seconds = 0.0;
   double back_substitution_time_in_seconds = 0.0;
+  double update_cameras_time_in_seconds = 0.0;
 
   // -----
 
@@ -257,21 +262,21 @@ struct SolverSummary {
   // record, i.e. not when logging happens in parallel with other tasks).
   double logging_time_in_seconds = -1.0;
 
-  // When the user calls Solve, before the actual optimization
-  // occurs, Ceres performs a number of preprocessing steps. These
-  // include error checks, memory allocations, and reorderings. This
-  // time is accounted for as preprocessing time.
+  // Preprocessor time includes everything in the 'optimize' call up until the
+  // minimizer loop starts, which  includes allocating the Linearizor
+  // (allocating landmark blocks, ...)
   double preprocessor_time_in_seconds = -1.0;
 
-  // Time spent in the TrustRegionMinimizer.
+  // Minimizer time is the time spent in the minimizer loop, excluding pre- and
+  // post-processing.
   double minimizer_time_in_seconds = -1.0;
 
-  // After the Minimizer is finished, some time is spent in
-  // re-evaluating residuals etc. This time is accounted for in the
-  // postprocessor time.
+  // Postprocessing includes additional computations after the minimizer loop
+  // (currently this is always 0).
   double postprocessor_time_in_seconds = -1.0;
 
-  // Some total of all time spent inside Ceres when Solve is called.
+  // Some total of all time spent inside the 'optimize' call. This is the sum of
+  // preprocessing-, minimizer- and postprocessing-time.
   double total_time_in_seconds = -1.0;
 
   // Time (in seconds) spent in the linear solver computing the

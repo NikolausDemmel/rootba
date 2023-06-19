@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -71,7 +71,9 @@ class LandmarkBlockDynamic
   inline auto& get_storage() { return storage_; }
   inline const auto& get_storage() const { return storage_; }
 
-  inline const auto& get_pose_idx() const { return pose_idx_; }
+  inline const std::vector<size_t>& get_pose_idx() const override {
+    return pose_idx_;
+  }
   inline size_t get_padding_idx() const { return padding_idx_; }
   inline size_t get_padding_size() const { return padding_size_; }
   inline size_t get_lm_idx() const { return lm_idx_; }

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -77,8 +77,7 @@ class SnavelyCameraModel;
 
 }  // namespace rootba
 
-namespace Eigen {
-namespace internal {
+namespace Eigen::internal {
 
 template <class Scalar_, int OPTIONS_>
 struct traits<rootba::SnavelyCameraModel<Scalar_, OPTIONS_>> {
@@ -105,8 +104,7 @@ struct traits<Map<const rootba::SnavelyCameraModel<Scalar_>, OPTIONS_>> {
       const Map<const Eigen::Matrix<Scalar, NUM_PARAMETERS, 1>, OPTIONS>;
 };
 
-}  // namespace internal
-}  // namespace Eigen
+}  // namespace Eigen::internal
 
 namespace rootba {
 

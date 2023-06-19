@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,12 +35,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-#include <unordered_map>
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <basalt/utils/hash.h>
 #include <tbb/blocked_range.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
 #include "rootba/cg/utils.hpp"
@@ -61,10 +61,9 @@ struct HashPair {
 
 // map of camera index to block; used to represent sparse block diagonal matrix
 template <typename Scalar>
-using IndexedBlocks =
-    std::unordered_map<std::pair<size_t, size_t>,
-                       Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>,
-                       HashPair>;
+using IndexedBlocks = tbb::concurrent_unordered_map<
+    std::pair<size_t, size_t>,
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>, HashPair>;
 
 // add diagonal to block-diagonal matrix; missing blocks are assumed to be 0
 template <typename Scalar>
@@ -73,9 +72,11 @@ void add_diagonal(IndexedBlocks<Scalar>& block_diagonal, size_t num_blocks,
                   const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& diagonal) {
   ROOTBA_ASSERT(num_blocks * block_size == unsigned_cast(diagonal.size()));
   for (size_t idx = 0; idx < num_blocks; ++idx) {
-    auto [it, is_new] = block_diagonal.try_emplace(std::make_pair(idx, idx));
-    if (is_new) {
-      it->second = diagonal.segment(block_size * idx, block_size).asDiagonal();
+    auto it = block_diagonal.find(std::make_pair(idx, idx));
+    if (it == block_diagonal.end()) {
+      block_diagonal.emplace_hint(
+          it, std::make_pair(idx, idx),
+          diagonal.segment(block_size * idx, block_size).asDiagonal());
     } else {
       it->second += diagonal.segment(block_size * idx, block_size).asDiagonal();
     }
@@ -105,10 +106,21 @@ class BlockDiagonalAccumulator {
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
   using MatX = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
+  template <class Derived>
+  inline void add(size_t idx, const Eigen::MatrixBase<Derived>& block) {
+    auto it = block_diagonal.find(std::make_pair(idx, idx));
+    if (it == block_diagonal.end()) {
+      block_diagonal.emplace_hint(it, std::make_pair(idx, idx), block);
+    } else {
+      it->second += block;
+    }
+  }
+
   inline void add(size_t idx, MatX&& block) {
-    auto [it, is_new] = block_diagonal.try_emplace(std::make_pair(idx, idx));
-    if (is_new) {
-      it->second = std::move(block);
+    auto it = block_diagonal.find(std::make_pair(idx, idx));
+    if (it == block_diagonal.end()) {
+      block_diagonal.emplace_hint(it, std::make_pair(idx, idx),
+                                  std::move(block));
     } else {
       it->second += block;
     }
@@ -121,9 +133,9 @@ class BlockDiagonalAccumulator {
 
   inline void join(BlockDiagonalAccumulator& b) {
     for (auto& [k, v] : b.block_diagonal) {
-      auto [it, is_new] = block_diagonal.try_emplace(k);
-      if (is_new) {
-        it->second = std::move(v);
+      auto it = block_diagonal.find(k);
+      if (it == block_diagonal.end()) {
+        block_diagonal.emplace_hint(it, k, std::move(v));
       } else {
         it->second += v;
       }
@@ -134,25 +146,37 @@ class BlockDiagonalAccumulator {
 };
 
 // sum up diagonal blocks in hash map for parallel reduction
-template <typename Scalar>
+template <typename Scalar, int POSE_SIZE = 9>
 class BlockSparseMatrix : public LinearOperator<Scalar> {
  public:
-  constexpr static int POSE_SIZE = 9;
-
   using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
   using MatX = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
 
   BlockSparseMatrix(size_t rows, size_t cols) : rows(rows), cols(cols) {}
 
-  ~BlockSparseMatrix() override = default;
-
   inline void add(size_t x, size_t y, MatX&& block) {
-    auto [it, is_new] = block_storage.try_emplace(std::make_pair(x, y));
-    if (is_new) {
-      it->second = std::move(block);
+    auto it = block_storage.find(std::make_pair(x, y));
+    if (it == block_storage.end()) {
+      block_storage.emplace_hint(it, std::make_pair(x, y), std::move(block));
     } else {
       it->second += block;
     }
+  }
+
+  inline void set_zero() {
+    if (block_storage.empty()) {
+      // workaround: avoid calling range() for empty container
+      // see: https://github.com/oneapi-src/oneTBB/issues/641
+      return;
+    }
+
+    auto body = [](const typename IndexedBlocks<Scalar>::range_type& range) {
+      for (typename IndexedBlocks<Scalar>::iterator r = range.begin();
+           r != range.end(); r++) {
+        r->second.setZero(POSE_SIZE, POSE_SIZE);
+      }
+    };
+    tbb::parallel_for(block_storage.range(), body);
   }
 
   inline void add_diag(size_t num_blocks, size_t block_size,
@@ -162,13 +186,38 @@ class BlockSparseMatrix : public LinearOperator<Scalar> {
 
   inline void join(BlockSparseMatrix& b) {
     for (auto& [k, v] : b.block_storage) {
-      auto [it, is_new] = block_storage.try_emplace(k);
-      if (is_new) {
-        it->second = std::move(v);
+      auto it = block_storage.find(k);
+      if (it == block_storage.end()) {
+        block_storage.emplace_hint(it, k, std::move(v));
       } else {
         it->second += v;
       }
     }
+  }
+
+  VecX left_multiply(const VecX& x) const {
+    ROOTBA_ASSERT(!cached_keys.empty());
+
+    auto body = [&](const tbb::blocked_range<size_t>& range, VecX res) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        const auto& k = cached_keys[r];
+        const auto& v = block_storage.at(k);
+        const size_t i = k.first;
+        const size_t j = k.second;
+
+        res.template segment<POSE_SIZE>(j * POSE_SIZE) +=
+            v.transpose() * x.template segment<POSE_SIZE>(i * POSE_SIZE);
+      }
+      return res;
+    };
+
+    tbb::blocked_range<size_t> range(0, cached_keys.size());
+
+    // TODO: add proper size and pose size handling
+    VecX identity = VecX::Zero(x.rows());
+
+    VecX res = tbb::parallel_reduce(range, identity, body, std::plus<VecX>());
+    return res;
   }
 
   VecX right_multiply(const VecX& x) const override {
@@ -199,7 +248,7 @@ class BlockSparseMatrix : public LinearOperator<Scalar> {
 
   size_t num_cols() const override { return cols; }
 
-  inline void recompute_keys() {
+  inline void recompute_keys() const {
     cached_keys.clear();
     for (const auto& [k, v] : block_storage) {
       cached_keys.emplace_back(k);
@@ -246,7 +295,7 @@ class BlockSparseMatrix : public LinearOperator<Scalar> {
 
   IndexedBlocks<Scalar> block_storage;
 
-  std::vector<std::pair<size_t, size_t>> cached_keys;
+  mutable std::vector<std::pair<size_t, size_t>> cached_keys;
 };
 
 }  // namespace rootba

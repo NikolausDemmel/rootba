@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -42,12 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <utility>
 
+#include <absl/container/flat_hash_set.h>
 #include <cereal/archives/binary.hpp>
 #include <glog/logging.h>
 
 #include "rootba/bal/bal_dataset_options.hpp"
 #include "rootba/bal/bal_pipeline_summary.hpp"
 #include "rootba/bal/bal_problem_io.hpp"
+#include "rootba/cg/block_sparse_matrix.hpp"
 #include "rootba/util/format.hpp"
 #include "rootba/util/stl_utils.hpp"
 #include "rootba/util/time_utils.hpp"
@@ -614,12 +616,123 @@ int BalProblem<Scalar>::num_observations() const {
   return num;
 }
 
+template <typename Scalar>
+int BalProblem<Scalar>::max_num_observations_per_lm() const {
+  int num = 0;
+  for (auto& lm : landmarks_) {
+    num = std::max(num, static_cast<int>(lm.obs.size()));
+  }
+  return num;
+}
+
+namespace {  // helper
+
+template <class T>
+struct is_map {
+  static constexpr bool value = false;
+};
+
+template <class Key, class Value>
+struct is_map<std::map<Key, Value>> {
+  static constexpr bool value = true;
+};
+
+// NOLINTNEXTLINE
+struct default_initialized_atomic_bool : public std::atomic<bool> {
+  default_initialized_atomic_bool() { store(false, std::memory_order_relaxed); }
+};
+
+}  // namespace
+
+template <typename Scalar>
+double BalProblem<Scalar>::compute_rcs_sparsity() const {
+  const int num_cams = num_cameras();
+  const int num_rcs_blocks = num_cams * num_cams;
+
+  // Note: absl::flat_hash_set<int> is noticably faster than
+  // std::unordered_set<int> and a lot faster than
+  // std::unordered_set<pair<size_t, size_t>>. An array of bool is a lot
+  // faster still, but might need a lot of memory for problems with many
+  // cameras.
+
+#if 0
+  // absl::flat_hash_set<int> cam_pairs;
+  Eigen::VectorX<bool> mask =
+      Eigen::VectorX<bool>::Constant(num_rcs_blocks, false);
+
+  for (const auto& lm : landmarks_) {
+    for (const auto& [cam_idx_i, _] : lm.obs) {
+      for (const auto& [cam_idx_j, _] : lm.obs) {
+        if (cam_idx_j < cam_idx_i) {
+          int index = cam_idx_i * num_cams + cam_idx_j;
+          // cam_pairs.emplace(index);
+          mask(index) = true;
+        } else {
+          // NOTE: the early abort with 'break' assumes ordered lm.obs
+          static_assert(is_map<decltype(lm.obs)>::value);
+          break;
+        }
+      }
+    }
+  }
+
+  // const int num_non_zero_rcs_blocks = num_cams + 2 * cam_pairs.size();
+  const int num_non_zero_rcs_blocks = num_cams + 2 * mask.count();
+#else
+
+  std::vector<default_initialized_atomic_bool> mask2(num_rcs_blocks);
+
+  // TODO: verify that we really don't need memory barrier before and after
+  // parallel for
+
+  auto body = [&](const tbb::blocked_range<size_t>& range) {
+    for (size_t r = range.begin(); r != range.end(); ++r) {
+      const auto& lm = landmarks_[r];
+      for (const auto& [cam_idx_i, _] : lm.obs) {
+        for (const auto& [cam_idx_j, _] : lm.obs) {
+          if (cam_idx_j < cam_idx_i) {
+            int index = cam_idx_i * num_cams + cam_idx_j;
+            mask2[index].store(true, std::memory_order_relaxed);
+          } else {
+            // NOTE: the early abort with 'break' assumes ordered lm.obs
+            static_assert(is_map<decltype(lm.obs)>::value);
+            break;
+          }
+        }
+      }
+    }
+  };
+
+  tbb::blocked_range<size_t> range(0, landmarks_.size());
+  tbb::parallel_for(range, body);
+
+  const int num_non_zero_rcs_blocks =
+      num_cams + 2 * std::count(mask2.begin(), mask2.end(), true);
+#endif
+
+  return 1. - num_non_zero_rcs_blocks / double(num_rcs_blocks);
+}
+
 template <class Scalar>
-void BalProblem<Scalar>::summarize_problem(DatasetSummary& summary) const {
+void BalProblem<Scalar>::summarize_problem(DatasetSummary& summary,
+                                           bool compute_sparsity) const {
   summary.type = "bal";
   summary.num_cameras = num_cameras();
   summary.num_landmarks = num_landmarks();
   summary.num_observations = num_observations();
+
+  if (compute_sparsity) {
+    // can be a bit expensive for dense problems, so compute only when needed
+    Timer timer;
+    summary.rcs_sparsity = compute_rcs_sparsity();
+
+    if (!quiet_) {
+      // output runtime for this computation, b/c it can be quite large for
+      // denser problems (so we notice when we should work in improving runtime)
+      LOG(INFO) << "Computed RCS sparsity: {:.2f} ({:.3f}s)"_format(
+          summary.rcs_sparsity, timer.elapsed());
+    }
+  }
 
   auto stats = [](const ArrXd& data) {
     DatasetSummary::Stats res;
@@ -648,7 +761,7 @@ void BalProblem<Scalar>::summarize_problem(DatasetSummary& summary) const {
 template <typename Scalar>
 std::string BalProblem<Scalar>::stats_to_string() const {
   DatasetSummary summary;
-  summarize_problem(summary);
+  summarize_problem(summary, false);
 
   return "BAL problem stats: {} cams, {} lms, {} obs, per-lm-obs: "
          "{:.1f}+-{:.1f}/{}/{}"
@@ -672,8 +785,10 @@ BalProblem<Scalar> load_normalized_bal_problem(
   BalDatasetOptions::DatasetType input_type = options.input_type;
   if (BalDatasetOptions::DatasetType::AUTO == input_type) {
     input_type = autodetect_input_type(options.input);
-    LOG(INFO) << "Autodetected input dataset type as {}."_format(
-        wise_enum::to_string(input_type));
+    if (!options.quiet) {
+      LOG(INFO) << "Autodetected input dataset type as {}."_format(
+          wise_enum::to_string(input_type));
+    }
   }
 
   // load dataset as double
@@ -725,7 +840,7 @@ BalProblem<Scalar> load_normalized_bal_problem(
 
   if (dataset_summary) {
     dataset_summary->input_path = options.input;
-    res.summarize_problem(*dataset_summary);
+    res.summarize_problem(*dataset_summary, true);
   }
 
   // print some info
@@ -771,7 +886,7 @@ template BalProblem<float> load_normalized_bal_problem_quiet<float>(
 
 // BalProblem in double is used by the ceres solver and GUI, so always
 // compile it; it should not be a big compilation overhead.
-//#ifdef ROOTBA_INSTANTIATIONS_DOUBLE
+// #ifdef ROOTBA_INSTANTIATIONS_DOUBLE
 template class BalProblem<double>;
 
 template BalProblem<double> load_normalized_bal_problem<double>(
@@ -784,6 +899,6 @@ template BalProblem<double> load_normalized_bal_problem<double>(
 
 template BalProblem<double> load_normalized_bal_problem_quiet<double>(
     const std::string& path);
-//#endif
+// #endif
 
 }  // namespace rootba

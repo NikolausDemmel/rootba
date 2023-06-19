@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -192,6 +192,8 @@ class BalProblem {
   inline int num_cameras() const { return signed_cast(cameras_.size()); }
   inline int num_landmarks() const { return signed_cast(landmarks_.size()); }
   int num_observations() const;
+  int max_num_observations_per_lm() const;
+  double compute_rcs_sparsity() const;
 
   bool quiet() const { return quiet_; }
   void set_quiet(const bool quiet) { quiet_ = quiet; }
@@ -216,7 +218,7 @@ class BalProblem {
     return res;
   }
 
-  void summarize_problem(DatasetSummary& summary) const;
+  void summarize_problem(DatasetSummary& summary, bool compute_sparsity) const;
 
   std::string stats_to_string() const;
 

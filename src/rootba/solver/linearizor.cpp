@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "rootba/solver/linearizor.hpp"
 
+#include <magic_enum/magic_enum.hpp>
+
+#include "rootba/solver/linearizor_power_sc.hpp"
 #include "rootba/solver/linearizor_qr.hpp"
 #include "rootba/solver/linearizor_sc.hpp"
 #include "rootba/util/format.hpp"
@@ -52,8 +55,12 @@ std::unique_ptr<Linearizor<Scalar_>> Linearizor<Scalar_>::create(
     case SolverOptions::SolverType::SCHUR_COMPLEMENT:
       return std::make_unique<LinearizorSC<Scalar>>(bal_problem, options,
                                                     summary);
+    case SolverOptions::SolverType::POWER_SCHUR_COMPLEMENT:
+      return std::make_unique<LinearizorPowerSC<Scalar>>(bal_problem, options,
+                                                         summary);
     default:
-      LOG(FATAL) << "Invalid LinearizorType {}"_format(options.solver_type);
+      LOG(FATAL) << "Invalid LinearizorType {}"_format(
+          magic_enum::enum_name(options.solver_type));
   }
 }
 

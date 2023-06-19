@@ -4,7 +4,7 @@
 # This file is part of the RootBA project.
 # https://github.com/NikolausDemmel/rootba
 #
-# Copyright (c) 2021, Nikolaus Demmel.
+# Copyright (c) 2021-2023, Nikolaus Demmel.
 # All rights reserved.
 #
 import copy
@@ -158,10 +158,15 @@ metric_desc = dict(
     solver_avg_residual_evaluation_time=Metric("t avg res-eval (s)", lambda l, it: l._static.solver.residual_evaluation_time_in_seconds / l._static.solver.num_residual_evaluations, 0),
     solver_avg_jacobian_evaluation_time=Metric("t avg jac-eval (s)", lambda l, it: l._static.solver.jacobian_evaluation_time_in_seconds/ l._static.solver.num_jacobian_evaluations , 0),
     # FIXME
+    minimizer_time_per_it=Metric("minim. time / it (s)", lambda l, it: l._static.solver.minimizer_time_in_seconds / l.iteration[it], 1),
     stage1_time=Metric("stage 1 time (s)", lambda l, it: l.stage1_time.sum(), 1),
     stage2_time=Metric("stage 2 time (s)", lambda l, it: l.stage2_time.sum(), 1),
+    stage1_time_per_it=Metric("stage 1 time / it (s)", lambda l, it: l.stage1_time.sum() / l.iteration[it], 1),
+    stage2_time_per_it=Metric("stage 2 time / it (s)", lambda l, it: l.stage2_time.sum() / l.iteration[it], 1),
     cg_time=Metric("cg time (s)", lambda l, it: l.solve_reduced_system_time.sum(), 1),
     cg_time_per_inner_it=Metric("cg-time / 1000-inner-it (s)", lambda l, it: ((l.solve_reduced_system_time.sum() if "solve_reduced_system_time" in l else 0)*1000) / l.linear_solver_iterations.sum(), 1),
+    solver_minimizer_minus_cg_time=Metric("t minim. - cg (s)", lambda l, it: l._static.solver.minimizer_time_in_seconds - l.solve_reduced_system_time.sum(), 0),
+    solver_minimizer_minus_cg_time_per_outer_it=Metric("(t minim. - cg) / outer-it (s)", lambda l, it: (l._static.solver.minimizer_time_in_seconds - l.solve_reduced_system_time.sum()) / (len(l.solve_reduced_system_time)-1), 0),
     lin_solve_time_per_inner_it=Metric("lin-solve-time / inner-it (s)", lambda l, it: get_linear_solver_time(l) / l.linear_solver_iterations.sum(), 0),
     resident_memory_peak=Metric("mem peak (GB)", lambda l, it: l._static.solver.resident_memory_peak / (2**30), 1),
 )

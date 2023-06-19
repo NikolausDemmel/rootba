@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,7 @@ class LandmarkBlockStatic
 
   void allocate_landmark_impl(Landmark& lm) {
     BASALT_ASSERT(lm.obs.size() == NUM_OBS);
+    pose_idx_.resize(NUM_OBS);
 
     size_t i = 0;
     for (const auto& [cam_idx, obs] : lm.obs) {
@@ -71,7 +72,9 @@ class LandmarkBlockStatic
   inline auto& get_storage() { return storage_; }
   inline const auto& get_storage() const { return storage_; }
 
-  inline const auto& get_pose_idx() const { return pose_idx_; }
+  inline const std::vector<size_t>& get_pose_idx() const override {
+    return pose_idx_;
+  }
   inline size_t get_padding_idx() const { return PADDING_IDX; }
   inline size_t get_padding_size() const { return PADDING_SIZE; }
   inline size_t get_lm_idx() const { return LM_IDX; }
@@ -85,7 +88,7 @@ class LandmarkBlockStatic
   // residuals [J_p | pad | J_l | res]
   Eigen::Matrix<Scalar, NUM_ROWS, NUM_COLS, Eigen::RowMajor> storage_;
 
-  std::array<size_t, NUM_OBS> pose_idx_;
+  std::vector<size_t> pose_idx_;
 };
 
 }  // namespace rootba

@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -107,7 +107,8 @@ class LandmarkBlockBase : public LandmarkBlock<Scalar> {
   void add_Jp_diag2(VecX& res) const override;
 
   void add_Q2TJp_T_Q2TJp_blockdiag(
-      BlockDiagonalAccumulator<Scalar>& accu) const override;
+      BlockDiagonalAccumulator<Scalar>& accu,
+      std::vector<std::mutex>* pose_mutex = nullptr) const override;
 
   void add_Jp_T_Jp_blockdiag(
       BlockDiagonalAccumulator<Scalar>& accu) const override;
@@ -130,6 +131,8 @@ class LandmarkBlockBase : public LandmarkBlock<Scalar> {
   RowMatX get_Q2TJp(size_t num_cams) const;
 
   State get_state() const override;
+
+  const std::vector<size_t>& get_pose_idx() const override;
 
  protected:
   void perform_qr_givens();

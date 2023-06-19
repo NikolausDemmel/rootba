@@ -10,7 +10,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # don't use pedantic for GCC, since it warns on extra ';' --> fix wise enum
   target_compile_options(rootba PUBLIC -Wpedantic)
 endif()
-target_compile_options(rootba PUBLIC -ftemplate-backtrace-limit=0 -Wall -Wextra -Wnon-virtual-dtor -Wsign-compare -Wno-unused-parameter -march=${CXX_MARCH})
+target_compile_options(rootba PUBLIC -ftemplate-backtrace-limit=0 -Wall -Wextra -Wnon-virtual-dtor -Wsign-compare -Wno-unused-parameter ${ROOTBA_MARCH_FLAG})
 target_compile_definitions(rootba PUBLIC ${ROOTBA_COMPILE_DEFINITIONS})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -38,6 +38,7 @@ target_link_libraries(rootba
     TBB::tbb
 )
 
+add_subdirectory(testing)
 add_subdirectory(util)
 add_subdirectory(options)
 add_subdirectory(bal)

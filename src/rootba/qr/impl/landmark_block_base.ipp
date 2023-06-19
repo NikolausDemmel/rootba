@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,11 @@ void LandmarkBlockBase<T, Scalar, POSE_SIZE>::allocate_landmark(
     LandmarkBlockBase::Landmark& lm,
     const LandmarkBlockBase::Options& options) {
   options_ = options;
+
+  // verify that num_obs >= 2, such that num_rows >= 4+3
+  ROOTBA_ASSERT_MSG(lm.obs.size() >= 2,
+                    "Current implemention of LandmarkBlock for QR solver "
+                    "requires at least 2 observations per landmark.");
 
   static_cast<T*>(this)->allocate_landmark_impl(lm);
 
@@ -451,6 +456,7 @@ void LandmarkBlockBase<T, Scalar, POSE_SIZE>::add_Q2TJp_T_Q2Tr(
       storage.bottomLeftCorner(num_rows - 3, padding_idx + padding_size)
           .adjoint() *
       storage.col(res_idx).tail(num_rows - 3);
+  // (Q2^T * Jp)^T * Q2^Tr
 
   for (size_t i = 0; i < pose_idx.size(); i++) {
     size_t cam_idx = pose_idx[i];
@@ -513,21 +519,35 @@ void LandmarkBlockBase<T, Scalar, POSE_SIZE>::add_Jp_diag2(
 
 template <class T, typename Scalar, int POSE_SIZE>
 void LandmarkBlockBase<T, Scalar, POSE_SIZE>::add_Q2TJp_T_Q2TJp_blockdiag(
-    BlockDiagonalAccumulator<Scalar>& accu) const {
+    BlockDiagonalAccumulator<Scalar>& accu,
+    std::vector<std::mutex>* pose_mutex) const {
   ROOTBA_ASSERT(state_ == State::MARGINALIZED);
 
   const size_t num_rows = static_cast<const T*>(this)->get_num_rows();
   const auto& pose_idx = static_cast<const T*>(this)->get_pose_idx();
   const auto& storage = static_cast<const T*>(this)->get_storage();
 
-  for (size_t i = 0; i < pose_idx.size(); i++) {
-    // we include the dampening rows (may be zeros if no dampening set)
+  // we include the dampening rows (may be zeros if no dampening set)
+  if (pose_mutex) {
+    for (size_t i = 0; i < pose_idx.size(); i++) {
+      // using auto gives us a "reference" to the block
+      const auto Q2T_Jp =
+          storage.block(3, POSE_SIZE * i, num_rows - 3, POSE_SIZE);
 
-    // using auto gives us a "reference" to the block
-    auto Q2T_Jp = storage.block(3, POSE_SIZE * i, num_rows - 3, POSE_SIZE);
-
-    size_t cam_idx = pose_idx[i];
-    accu.add(cam_idx, Q2T_Jp.transpose() * Q2T_Jp);
+      const size_t cam_idx = pose_idx[i];
+      {
+        MatX tmp = Q2T_Jp.transpose() * Q2T_Jp;
+        std::scoped_lock lock(pose_mutex->at(cam_idx));
+        accu.add(cam_idx, std::move(tmp));
+      }
+    }
+  } else {
+    for (size_t i = 0; i < pose_idx.size(); i++) {
+      // using auto gives us a "reference" to the block
+      auto Q2T_Jp = storage.block(3, POSE_SIZE * i, num_rows - 3, POSE_SIZE);
+      const size_t cam_idx = pose_idx[i];
+      accu.add(cam_idx, Q2T_Jp.transpose() * Q2T_Jp);
+    }
   }
 }
 
@@ -704,6 +724,10 @@ void LandmarkBlockBase<T, Scalar, POSE_SIZE>::perform_qr_householder() {
   VecX temp_vector1(num_cols);
   VecX temp_vector2(num_rows - 3);
 
+  // Assumption: We have at least 2 observations, such that we have at least 4
+  // rows + 3 for damping and remaining_rows is positive.
+  ROOTBA_ASSERT(num_rows >= 4 + 3);
+
   for (size_t k = 0; k < 3; ++k) {
     size_t remaining_rows = num_rows - k - 3;
 
@@ -716,6 +740,12 @@ void LandmarkBlockBase<T, Scalar, POSE_SIZE>::perform_qr_householder() {
     storage.block(k, 0, remaining_rows, num_cols)
         .applyHouseholderOnTheLeft(temp_vector2, tau, temp_vector1.data());
   }
+}
+
+template <class T, typename Scalar, int POSE_SIZE>
+const std::vector<size_t>&
+LandmarkBlockBase<T, Scalar, POSE_SIZE>::get_pose_idx() const {
+  return static_cast<const T*>(this)->get_pose_idx();
 }
 
 }  // namespace rootba

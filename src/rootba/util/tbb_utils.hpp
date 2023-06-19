@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace rootba {
 
+// number of hardware cores / threads
+// This is independent of any restrictions from cgroups / limits.
+int hardware_concurrency();
+
+// Maximum concurrecny in the current task arena, not considering any limit set
+// by tbb::global_control. Max concurrency is limited by number of hardware
+// cores / threads, but also respects any process-wide limits (e.g. cgroups on
+// SLURM). The value returned might be lower than the process-wide maximum, if
+// executed in a custom task_arena with lower max_concurrecy.
+int tbb_task_arena_max_concurrency();
+
+// Current maximum concurrency limit set by tbb::global_control. The effective
+// maximum concurrecny in the current task arena might be lower than that.
+int tbb_global_max_allowed_parallelism();
+
+// Effective max concurrecny for tasks in the current task arena. Unlike
+// tbb_max_concurrency it also considers tbb::global_control and thus should be
+// the effective maximum concurrecny of TBB tasks executed in this task arena.
+int tbb_effective_max_concurrency();
+
 // set global tbb thread limit; limit is in place until object is destroyed
+//
+// Usage example:
+//
+// {
+//   ScopedTbbThreadLimit scoped_thread_limit(4);
+//
+//   tbb::parallel_for(...);
+// }
 class ScopedTbbThreadLimit {
  public:
   // maximum number of tbb threads (globally); 0 means no limit;

@@ -1,0 +1,551 @@
+########################################################################
+##
+##  poba_batch_config.toml
+##
+##  Batch config file for systematically generating rootba_config.toml
+##  files in a specific folder structure that allows running
+##  experiments automatically for systematic evaluation.
+##
+##  This file serves as input to the `generate-batch-configs.py`
+##  script and experiments for the the generated config files can be
+##  run with `run-all-in.sh`
+##
+##  The configs in this files can be used to reproduce the experiement
+##  results in PoBA paper.
+##
+########################################################################
+
+
+
+########################################################################
+# 1. base config
+#
+# All entries not in the `_batch` group serve as the base config and
+# are copied into all generated config files (but they may be
+# overwritten by the configurations specified with "alterantives" and
+# "combinations", see below).
+########################################################################
+
+# The `batch_run` section is for the runner script, to configure the
+# binary and environment variables for execution.
+[batch_run]
+executable = "bal"
+
+[batch_run.env]
+OPENBLAS_NUM_THREADS = 1
+OMP_NUM_THREADS = 1
+
+# The `dataset` and `solver` sections are read by the rootba
+# executable.
+[dataset]
+random_seed = 38401
+rotation_sigma = 0
+translation_sigma = 0.01
+point_sigma = 0.01
+init_depth_threshold = 0.1
+
+[solver]
+num_threads = 0
+staged_execution = true
+optimized_cost = "ERROR"
+preconditioner_type = "SCHUR_JACOBI"
+eta = 0.01
+
+[solver.residual]
+robust_norm = "HUBER"
+huber_parameter = 1.0
+
+[solver.log]
+save_log_flags = ["UBJSON"]
+
+
+
+########################################################################
+# 2. named configs
+#
+# Config sections like `_batch.config.NAME` are later referenced by
+# their NAME. The part that comes below NAME is merged into the base
+# config file, where existing sections are merged, and other existing
+# config elements are overwritten. Each named config can have as many
+# entries as you like.
+#
+# The sub-folder names for generated experiments are also determined
+# as a concatenation of these config names.
+########################################################################
+
+
+###################
+# All BAL datasets
+#
+# Note: Using the `generate-batch-configs.py` and `run-all-in.sh`
+# scripts, the working directory of experiment runs will be 4 folder
+# levels down, so any relative paths need 4 additional `..`
+# levels. Absolute paths are of course also possible.
+
+
+[_batch.config.dubrovnik16]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-16-22106-pre.txt"
+[_batch.config.dubrovnik88]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-88-64298-pre.txt"
+[_batch.config.dubrovnik135]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-135-90642-pre.txt"
+[_batch.config.dubrovnik142]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-142-93602-pre.txt"
+[_batch.config.dubrovnik150]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-150-95821-pre.txt"
+[_batch.config.dubrovnik161]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-161-103832-pre.txt"
+[_batch.config.dubrovnik173]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-173-111908-pre.txt"
+[_batch.config.dubrovnik182]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-182-116770-pre.txt"
+[_batch.config.dubrovnik202]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-202-132796-pre.txt"
+[_batch.config.dubrovnik237]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-237-154414-pre.txt"
+[_batch.config.dubrovnik253]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-253-163691-pre.txt"
+[_batch.config.dubrovnik262]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-262-169354-pre.txt"
+[_batch.config.dubrovnik273]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-273-176305-pre.txt"
+[_batch.config.dubrovnik287]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-287-182023-pre.txt"
+[_batch.config.dubrovnik308]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-308-195089-pre.txt"
+[_batch.config.dubrovnik356]
+dataset.input = "../../../../../rootba_data/bal/dubrovnik/problem-356-226730-pre.txt"
+
+
+[_batch.config.final93]
+dataset.input = "../../../../../rootba_data/bal/final/problem-93-61203-pre.txt"
+[_batch.config.final394]
+dataset.input = "../../../../../rootba_data/bal/final/problem-394-100368-pre.txt"
+[_batch.config.final871]
+dataset.input = "../../../../../rootba_data/bal/final/problem-871-527480-pre.txt"
+[_batch.config.final961]
+dataset.input = "../../../../../rootba_data/bal/final/problem-961-187103-pre.txt"
+[_batch.config.final1936]
+dataset.input = "../../../../../rootba_data/bal/final/problem-1936-649673-pre.txt"
+[_batch.config.final3068]
+dataset.input = "../../../../../rootba_data/bal/final/problem-3068-310854-pre.txt"
+[_batch.config.final4585]
+dataset.input = "../../../../../rootba_data/bal/final/problem-4585-1324582-pre.txt"
+[_batch.config.final13682]
+dataset.input = "../../../../../rootba_data/bal/final/problem-13682-4456117-pre.txt"
+
+
+[_batch.config.ladybug49]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-49-7776-pre.txt"
+[_batch.config.ladybug73]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-73-11032-pre.txt"
+[_batch.config.ladybug138]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-138-19878-pre.txt"
+[_batch.config.ladybug318]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-318-41628-pre.txt"
+[_batch.config.ladybug372]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-372-47423-pre.txt"
+[_batch.config.ladybug412]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-412-52215-pre.txt"
+[_batch.config.ladybug460]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-460-56811-pre.txt"
+[_batch.config.ladybug539]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-539-65220-pre.txt"
+[_batch.config.ladybug598]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-598-69218-pre.txt"
+[_batch.config.ladybug646]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-646-73584-pre.txt"
+[_batch.config.ladybug707]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-707-78455-pre.txt"
+[_batch.config.ladybug783]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-783-84444-pre.txt"
+[_batch.config.ladybug810]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-810-88814-pre.txt"
+[_batch.config.ladybug856]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-856-93344-pre.txt"
+[_batch.config.ladybug885]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-885-97473-pre.txt"
+[_batch.config.ladybug931]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-931-102699-pre.txt"
+[_batch.config.ladybug969]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-969-105826-pre.txt"
+[_batch.config.ladybug1031]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1031-110968-pre.txt"
+[_batch.config.ladybug1064]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1064-113655-pre.txt"
+[_batch.config.ladybug1118]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1118-118384-pre.txt"
+[_batch.config.ladybug1152]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1152-122269-pre.txt"
+[_batch.config.ladybug1197]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1197-126327-pre.txt"
+[_batch.config.ladybug1235]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1235-129634-pre.txt"
+[_batch.config.ladybug1266]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1266-132593-pre.txt"
+[_batch.config.ladybug1340]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1340-137079-pre.txt"
+[_batch.config.ladybug1469]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1469-145199-pre.txt"
+[_batch.config.ladybug1514]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1514-147317-pre.txt"
+[_batch.config.ladybug1587]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1587-150845-pre.txt"
+[_batch.config.ladybug1642]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1642-153820-pre.txt"
+[_batch.config.ladybug1695]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1695-155710-pre.txt"
+[_batch.config.ladybug1723]
+dataset.input = "../../../../../rootba_data/bal/ladybug/problem-1723-156502-pre.txt"
+
+
+[_batch.config.trafalgar21]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-21-11315-pre.txt"
+[_batch.config.trafalgar39]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-39-18060-pre.txt"
+[_batch.config.trafalgar50]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-50-20431-pre.txt"
+[_batch.config.trafalgar126]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-126-40037-pre.txt"
+[_batch.config.trafalgar138]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-138-44033-pre.txt"
+[_batch.config.trafalgar161]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-161-48126-pre.txt"
+[_batch.config.trafalgar170]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-170-49267-pre.txt"
+[_batch.config.trafalgar174]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-174-50489-pre.txt"
+[_batch.config.trafalgar193]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-193-53101-pre.txt"
+[_batch.config.trafalgar201]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-201-54427-pre.txt"
+[_batch.config.trafalgar206]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-206-54562-pre.txt"
+[_batch.config.trafalgar215]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-215-55910-pre.txt"
+[_batch.config.trafalgar225]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-225-57665-pre.txt"
+[_batch.config.trafalgar257]
+dataset.input = "../../../../../rootba_data/bal/trafalgar/problem-257-65132-pre.txt"
+
+
+[_batch.config.venice52]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-52-64053-pre.txt"
+[_batch.config.venice89]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-89-110973-pre.txt"
+[_batch.config.venice245]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-245-198739-pre.txt"
+[_batch.config.venice427]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-427-310384-pre.txt"
+[_batch.config.venice744]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-744-543562-pre.txt"
+[_batch.config.venice951]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-951-708276-pre.txt"
+[_batch.config.venice1102]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1102-780462-pre.txt"
+[_batch.config.venice1158]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1158-802917-pre.txt"
+[_batch.config.venice1184]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1184-816583-pre.txt"
+[_batch.config.venice1238]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1238-843534-pre.txt"
+[_batch.config.venice1288]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1288-866452-pre.txt"
+[_batch.config.venice1350]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1350-894716-pre.txt"
+[_batch.config.venice1408]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1408-912229-pre.txt"
+[_batch.config.venice1425]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1425-916895-pre.txt"
+[_batch.config.venice1473]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1473-930345-pre.txt"
+[_batch.config.venice1490]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1490-935273-pre.txt"
+[_batch.config.venice1521]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1521-939551-pre.txt"
+[_batch.config.venice1544]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1544-942409-pre.txt"
+[_batch.config.venice1638]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1638-976803-pre.txt"
+[_batch.config.venice1666]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1666-983911-pre.txt"
+[_batch.config.venice1672]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1672-986962-pre.txt"
+[_batch.config.venice1681]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1681-983415-pre.txt"
+[_batch.config.venice1682]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1682-983268-pre.txt"
+[_batch.config.venice1684]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1684-983269-pre.txt"
+[_batch.config.venice1695]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1695-984689-pre.txt"
+[_batch.config.venice1696]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1696-984816-pre.txt"
+[_batch.config.venice1706]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1706-985529-pre.txt"
+[_batch.config.venice1776]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1776-993909-pre.txt"
+[_batch.config.venice1778]
+dataset.input = "../../../../../rootba_data/bal/venice/problem-1778-993923-pre.txt"
+
+
+
+###################
+# solver type: qr, sc, ceres, poba
+
+[_batch.config.rootbaqr]
+solver.solver_type = "SQUARE_ROOT"
+[_batch.config.rootbasc]
+solver.solver_type = "SCHUR_COMPLEMENT"
+[_batch.config.ceres]
+solver.solver_type = "CERES"
+[_batch.config.rootbapower]
+solver.solver_type = "POWER_SCHUR_COMPLEMENT"
+
+
+###################
+# general options relevant for both solvers
+
+[_batch.config.it00]
+solver.max_num_iterations = 0
+[_batch.config.it01]
+solver.max_num_iterations = 1
+[_batch.config.it05]
+solver.max_num_iterations = 5
+[_batch.config.it10]
+solver.max_num_iterations = 10
+[_batch.config.it20]
+solver.max_num_iterations = 20
+[_batch.config.it50]
+solver.max_num_iterations = 50
+[_batch.config.it100]
+solver.max_num_iterations = 100
+
+
+
+[_batch.config.j00]
+solver.num_threads = 0
+[_batch.config.j01]
+solver.num_threads = 1
+[_batch.config.j02]
+solver.num_threads = 2
+[_batch.config.j04]
+solver.num_threads = 4
+[_batch.config.j06]
+solver.num_threads = 6
+[_batch.config.j08]
+solver.num_threads = 8
+[_batch.config.j12]
+solver.num_threads = 12
+[_batch.config.j18]
+solver.num_threads = 18
+[_batch.config.j24]
+solver.num_threads = 24
+
+
+
+[_batch.config.saveopt]
+dataset.save_output = true
+
+
+
+[_batch.config.norobust]
+solver.residual.robust_norm = "NONE"
+[_batch.config.huber]
+solver.residual.robust_norm = "HUBER"
+solver.residual.huber_parameter = 1.0
+
+
+
+[_batch.config.schurjacobi]
+solver.preconditioner_type = "SCHUR_JACOBI"
+[_batch.config.jacobi]
+solver.preconditioner_type = "JACOBI"
+[_batch.config.powersc]
+solver.preconditioner_type = "POWER_SCHUR_COMPLEMENT" # only support SCHUR_COMPLEMENT
+
+
+
+[_batch.config.optimized_cost_error]
+solver.optimized_cost = "ERROR"
+[_batch.config.optimized_cost_error_valid]
+solver.optimized_cost = "ERROR_VALID"
+[_batch.config.optimized_cost_error_valid_avg]
+solver.optimized_cost = "ERROR_VALID_AVG"
+
+
+
+###################
+# Options for the RootBA solver types
+
+[_batch.config.double]
+solver.use_double = true
+[_batch.config.float]
+solver.use_double = false
+
+
+[_batch.config.staged]
+solver.staged_execution = true
+[_batch.config.unstaged]
+solver.staged_execution = false
+
+
+
+###################
+# Options for POWER_SCHUR_COMPLEMENT
+
+[_batch.config.maxorderpower01]
+solver.power_order = 1
+[_batch.config.maxorderpower02]
+solver.power_order = 2
+[_batch.config.maxorderpower03]
+solver.power_order = 3
+[_batch.config.maxorderpower10]
+solver.power_order = 10
+[_batch.config.maxorderpower20]
+solver.power_order = 20
+[_batch.config.maxorderpower30]
+solver.power_order = 30
+[_batch.config.maxorderpower40]
+solver.power_order = 40
+[_batch.config.maxorderpower50]
+solver.power_order = 50
+
+
+
+###################
+# Options for Ceres
+
+[_batch.config.cgnr]
+solver.linear_solver_type = "CGNR"  # only support's the JACOBI preconditioner
+[_batch.config.dense_cholesky]
+solver.linear_solver_type = "DENSE_SCHUR"
+[_batch.config.spare_cholesky]
+solver.linear_solver_type = "SPARSE_SCHUR"
+[_batch.config.explicitsc]
+solver.linear_solver_type = "ITERATIVE_SCHUR"
+solver.use_explicit_schur_complement = true  # only supportes the SCHUR_JACOBI preconditioner
+[_batch.config.implicitsc]
+solver.linear_solver_type = "ITERATIVE_SCHUR"
+solver.use_explicit_schur_complement = false
+
+
+########################################################################
+# 3. alternatives
+#
+# The section `_batch.alternatives` defines groups of the qnamed
+# configs defined above (referenced by NAME) for which we want to
+# generate one experiment each. For example, if an alternative
+# contains 3 entries, 3 different experiments are generated. An
+# obvious example are the different datasets, but it can be any
+# configration for which we might want an OR relation when generating
+# experiments.
+#
+# Each set of alternatives is identified by the table key as its NAME
+# and the value is a list of strings, which need to refer to NAMES of
+# named configs.
+########################################################################
+
+[_batch.alternatives]
+
+# all BAL 'ladybug' datasets
+bal_ladybug = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646", "ladybug707", "ladybug783", "ladybug810", "ladybug856", "ladybug885", "ladybug931", "ladybug969", "ladybug1064", "ladybug1118", "ladybug1152", "ladybug1197", "ladybug1235", "ladybug1266", "ladybug1340", "ladybug1469", "ladybug1514", "ladybug1587", "ladybug1642", "ladybug1695", "ladybug1723"]
+
+# all BAL 'trafalgar' datasets
+bal_trafalgar = ["trafalgar21", "trafalgar39", "trafalgar50", "trafalgar126", "trafalgar138", "trafalgar161", "trafalgar170", "trafalgar174", "trafalgar193", "trafalgar201", "trafalgar206", "trafalgar215", "trafalgar225", "trafalgar257"]
+
+# all BAL 'dubrovnik' datasets
+bal_dubrovnik = ["dubrovnik16", "dubrovnik88", "dubrovnik135", "dubrovnik142", "dubrovnik150", "dubrovnik161", "dubrovnik173", "dubrovnik182", "dubrovnik202", "dubrovnik237", "dubrovnik253", "dubrovnik262", "dubrovnik273", "dubrovnik287", "dubrovnik308", "dubrovnik356"]
+
+# all BAL 'venice' datasets
+bal_venice = ["venice52", "venice89", "venice245", "venice427", "venice744", "venice951", "venice1102", "venice1158", "venice1184", "venice1238", "venice1288", "venice1350", "venice1408", "venice1425", "venice1473", "venice1490", "venice1521", "venice1544", "venice1638", "venice1666", "venice1672", "venice1681", "venice1682", "venice1684", "venice1695", "venice1696", "venice1706", "venice1776", "venice1778"]
+
+# all BAL 'final' datasets
+bal_final = ["final93", "final394", "final871", "final961", "final1936", "final3068", "final4585", "final13682"]
+
+# all BAL datasets
+all_bal = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646", "ladybug707", "ladybug783", "ladybug810", "ladybug856", "ladybug885", "ladybug931", "ladybug969", "ladybug1064", "ladybug1118", "ladybug1152", "ladybug1197", "ladybug1235", "ladybug1266", "ladybug1340", "ladybug1469", "ladybug1514", "ladybug1587", "ladybug1642", "ladybug1695", "ladybug1723","trafalgar21", "trafalgar39", "trafalgar50", "trafalgar126", "trafalgar138", "trafalgar161", "trafalgar170", "trafalgar174", "trafalgar193", "trafalgar201", "trafalgar206", "trafalgar215", "trafalgar225", "trafalgar257", "dubrovnik16", "dubrovnik88", "dubrovnik135", "dubrovnik142", "dubrovnik150", "dubrovnik161", "dubrovnik173", "dubrovnik182", "dubrovnik202", "dubrovnik237", "dubrovnik253", "dubrovnik262", "dubrovnik273", "dubrovnik287", "dubrovnik308", "dubrovnik356", "venice52", "venice89", "venice245", "venice427", "venice744", "venice951", "venice1102", "venice1158", "venice1184", "venice1238", "venice1288", "venice1350", "venice1408", "venice1425", "venice1473", "venice1490", "venice1521", "venice1544", "venice1638", "venice1666", "venice1672", "venice1681", "venice1682", "venice1684", "venice1695", "venice1696", "venice1706", "venice1776", "venice1778", "final93", "final394", "final871", "final961", "final1936", "final3068", "final4585", "final13682"]
+
+# small subset of BAL datasets
+some_bal = ["ladybug73", "ladybug539", "ladybug1723", "trafalgar126", "trafalgar170", "trafalgar257", "dubrovnik88", "dubrovnik173", "dubrovnik356", "venice89", "venice744", "venice1778", "final93", "final394", "final871", "final4585"]
+
+# small subset of 10 ladybug sequences for the tutorial
+tutorial_bal = ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646"]
+
+
+# Optimize in different precision
+all_float = ["double", "float"]
+
+# Run ceres with explicit or implicit Schur complement
+all_itsc = ["explicitsc", "implicitsc"]
+
+
+
+########################################################################
+# 4. combinations
+#
+# The section `_batch.combinations` defines groups of named configs or
+# named alternatives. Each combination will generate a set of
+# expriments were the base config is merged with all defined configs.
+# They are merged in order, from left to right, so later configs can
+# overwrite config elements of both the base config and earlier
+# configs. Whenever alternatives are specified, one experiment is
+# generated for each of the alternatives. There may appear more than
+# one of the alternatives in a specific combination, in which case the
+# number of experiments is determined by the product set of all
+# alternatives. For example, if define a combination with one named
+# alternative that has 2 configs, and one that has 3, we get a total
+# of 6 experiments being generated.
+#
+# Each of the combinations is indentified by the table key as its
+# NAME, which becomes a sub-folder name for the generated files. The
+# value is a list of strings, where each string is either the NAME of
+# a named config, or the NAME of one of the defined alternatives, and
+# the different list entries are in an AND relation.
+########################################################################
+
+# Default settings for experiments in PoBA paper (see solver_options.hpp for definition).
+#
+# - Optimization
+#  - function_tolerance = 1e-6
+#  - max_linear_solver_iterations = 500
+#  - eta = 0.01 (epsilon)
+#  - initial_trust_region_radius = 1e4 (lambda = 1 / radius)
+# - Initial value perturbation
+#   - translation_sigma = 0.01 (camera position)
+#   - point_sigma = 0.01 (landmark)
+
+# The following combinations reproduce the paper results
+[_batch.combinations]
+
+# RootBA QR solver
+1_rootba_qr = ["it50", "rootbaqr", "all_float", "j04", "all_bal"]
+
+# ceres solver (explicit and implicit)
+2_rootba_ceres = ["it50", "ceres", "all_itsc", "j04", "all_bal"]
+
+# PoBA solver
+3_rootba_poba = ["it50", "rootbapower", "all_float", "maxorderpower20", "j04", "all_bal"]
+
+# Schur complement solver with PoBA preconditioner (not presented in the paper)
+4_rootba_poba_precond = ["it50", "rootbasc", "powersc", "all_float", "maxorderpower02", "j04", "all_bal"]
+
+
+########################################################################
+# 5. revision
+#
+# Revision is the main folder name for the generated experiments. We
+# suggest adopting a naming scheme like with numbered names
+#
+#     01_my_first_set_of_experiments
+#     02_some_more_tests
+#     03_fixed_implementation
+#     ...
+#
+# such that folders are sorted chronologically. This way it might be
+# easier to later find previous relults.
+########################################################################
+
+[_batch]
+
+revision = "cvpr_poba"

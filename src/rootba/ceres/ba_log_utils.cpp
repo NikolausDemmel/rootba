@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -36,12 +36,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rootba/ceres/ba_log_utils.hpp"
 
-#include <thread>
-
 #include <magic_enum/magic_enum.hpp>
 
 #include "rootba/util/assert.hpp"
 #include "rootba/util/system_utils.hpp"
+#include "rootba/util/tbb_utils.hpp"
 
 namespace rootba {
 
@@ -75,9 +74,8 @@ void log_ceres_summary(BaLog& log, const std::string& solver_type,
   solver_log.num_threads_given = summary.num_threads_given;
   solver_log.num_threads_used = summary.num_threads_used;
 
-  // TODO: check if this does the right thing also when limits are in place
-  // (e.g. on SLURM)
-  solver_log.num_threads_available = std::thread::hardware_concurrency();
+  // Effective available hardware threads (respecting process limits).
+  solver_log.num_threads_available = tbb_task_arena_max_concurrency();
 
   {
     MemoryInfo info;

@@ -6,9 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2023-06-18
+### Added
+- Open source release of the PoBA implementation for CVPR 2023.
+
 ## [0.9.0] - 2021-05-31
 ### Added
 - Open source release of the RootBA project for CVPR 2021.
 
-[Unreleased]: https://github.com/NikolausDemmel/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/NikolausDemmel/rootba/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/NikolausDemmel/rootba/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/NikolausDemmel/rootba/releases/tag/v0.9.0

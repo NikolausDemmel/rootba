@@ -43,7 +43,8 @@ gradient_check_numeric_derivative_relative_step_size = 1e-06
 use_double = true
 use_householder_marginalization = true
 staged_execution = true
-reduction_alg = 0
+reduction_alg = 1
+power_order = 10
 initial_vee = 2.0
 vee_factor = 2.0
 

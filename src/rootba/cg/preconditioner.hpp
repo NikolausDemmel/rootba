@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rootba/cg/block_sparse_matrix.hpp"
 #include "rootba/cg/utils.hpp"
+#include "rootba/sc/landmark_block.hpp"
 #include "rootba/util/assert.hpp"
 
 namespace rootba {
@@ -139,6 +140,117 @@ class BlockDiagonalPreconditioner : public Preconditioner<Scalar> {
   int num_cams;
   int pose_size;
   RowMatX inv_blocks;
+};
+
+template <typename Scalar, int POSE_SIZE>
+class PowerSCPreconditioner : public Preconditioner<Scalar> {
+ public:
+  using VecX = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+  using MatX = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+  using RowMatX =
+      Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+  using LandmarkBlock = LandmarkBlockSC<Scalar, POSE_SIZE>;
+
+  PowerSCPreconditioner(const size_t order, const IndexedBlocks<Scalar>& Hpp,
+                        const std::vector<LandmarkBlock>& lm_blocks,
+                        std::vector<std::mutex>& pose_mutex)
+      : num_cams_(pose_mutex.size()),
+        order_(order),
+        lm_blocks_(lm_blocks),
+        pose_mutex_(pose_mutex) {
+    // Invert Hpp (should be already damped)
+    Hpp_inv_.resize(POSE_SIZE * num_cams_, POSE_SIZE);
+    auto body = [&](const tbb::blocked_range<size_t>& range) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        ROOTBA_ASSERT_MSG(Hpp.count(std::make_pair(r, r)),
+                          "Missing Hpp blocks");
+
+        const auto& input_block = Hpp.at(std::make_pair(r, r));
+        auto inv_block =
+            Hpp_inv_.template block<POSE_SIZE, POSE_SIZE>(POSE_SIZE * r, 0);
+        inv_block.noalias() =
+            input_block.template selfadjointView<Eigen::Upper>().llt().solve(
+                MatX::Identity(POSE_SIZE, POSE_SIZE));
+      }
+    };
+    tbb::blocked_range<size_t> range(0, num_cams_);
+    tbb::parallel_for(range, body);
+  }
+
+  void solve_assign(const VecX& b, VecX& x) const override {
+    ROOTBA_ASSERT(b.size() == num_rows());
+    ROOTBA_ASSERT(x.size() == num_rows());
+
+    // The computations here are equivalent to the inner iterations of
+    // LinearizationPowerSC solver.
+    x = right_mul_Hpp_inv(b);
+    VecX tmp = x;
+
+    for (size_t i = 1; i <= order_; ++i) {
+      tmp = right_mul_Hpp_inv(right_mul_e0(tmp));
+      x += tmp;
+    }
+  }
+
+  int num_rows() const { return num_cams_ * POSE_SIZE; }
+
+  // For debugging only
+  inline auto get_Hpp_inv(const size_t cam_idx) const {
+    return Hpp_inv_.template block<POSE_SIZE, POSE_SIZE>(POSE_SIZE * cam_idx,
+                                                         0);
+  }
+
+ protected:
+  inline VecX right_mul_Hpp_inv(const VecX& x) const {
+    ROOTBA_ASSERT(static_cast<int>(x.size()) == num_cams_ * POSE_SIZE);
+
+    VecX res(num_cams_ * POSE_SIZE);
+    auto body = [&](const tbb::blocked_range<size_t>& range) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        const auto u =
+            Hpp_inv_.template block<POSE_SIZE, POSE_SIZE>(POSE_SIZE * r, 0);
+        const auto v = x.template segment<POSE_SIZE>(POSE_SIZE * r);
+        res.template segment<POSE_SIZE>(POSE_SIZE * r) = u * v;
+      }
+    };
+
+    tbb::blocked_range<size_t> range(0, num_cams_);
+    tbb::parallel_for(range, body);
+
+    return res;
+  }
+
+  inline VecX right_mul_e0(const VecX& x) const {
+    ROOTBA_ASSERT(static_cast<int>(x.size()) == num_cams_ * POSE_SIZE);
+
+    VecX res = VecX::Zero(num_cams_ * POSE_SIZE);
+    auto body = [&](const tbb::blocked_range<size_t>& range) {
+      for (size_t r = range.begin(); r != range.end(); ++r) {
+        const auto& lb = lm_blocks_[r];
+
+        VecX Jp_x(2 * lb.num_poses());
+        lb.add_Jp_x(Jp_x, x);
+
+        const auto Jl = lb.get_Jl();
+        const VecX tmp = Jl * (lb.get_Hll_inv() * (Jl.transpose() * Jp_x));
+
+        lb.add_JpT_x(res, tmp, &pose_mutex_);
+      }
+    };
+
+    tbb::blocked_range<size_t> range(0, lm_blocks_.size());
+    tbb::parallel_for(range, body);
+
+    return res;
+  }
+
+  const int num_cams_;
+  const size_t order_;
+
+  const std::vector<LandmarkBlock>& lm_blocks_;
+  std::vector<std::mutex>& pose_mutex_;
+
+  RowMatX Hpp_inv_;
 };
 
 }  // namespace rootba

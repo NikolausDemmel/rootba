@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,7 @@ struct BaLog {
     VISITABLE_INIT(int, num_cameras, 0);
     VISITABLE_INIT(int, num_landmarks, 0);
     VISITABLE_INIT(int, num_observations, 0);
+    VISITABLE_INIT(double, rcs_sparsity, 0);
 
     VISITABLE(Stats, per_lm_obs);
     VISITABLE(Stats, per_host_lms);
@@ -140,6 +141,9 @@ struct BaLog {
 
     // iteration number (index 0 == initialization)
     VISITABLE_INIT(int, iteration, -1);
+
+    // used solver type
+    VISITABLE(std::string, linear_solver_type);
 
     // success flags
     VISITABLE_INIT(bool, step_is_valid, false);
@@ -220,8 +224,10 @@ struct BaLog {
     VISITABLE_INIT(double, compute_preconditioner_time, 0);
     VISITABLE_INIT(double, compute_gradient_time, 0);
     VISITABLE_INIT(double, stage2_time, 0);
+    VISITABLE_INIT(double, prepare_time, 0);
     VISITABLE_INIT(double, solve_reduced_system_time, 0);
     VISITABLE_INIT(double, back_substitution_time, 0);
+    VISITABLE_INIT(double, update_cameras_time, 0);
 
     // memory
     VISITABLE_INIT(uint64_t, resident_memory, 0);

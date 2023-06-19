@@ -4,12 +4,12 @@
 # This file is part of the RootBA project.
 # https://github.com/NikolausDemmel/rootba
 #
-# Copyright (c) 2021, Nikolaus Demmel.
+# Copyright (c) 2021-2023, Nikolaus Demmel.
 # All rights reserved.
 #
 import os
 import re
-from collections import Mapping
+from collections.abc import Mapping
 
 from .log import load_ba_log
 

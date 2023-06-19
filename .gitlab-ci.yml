@@ -37,7 +37,7 @@ docker-ci-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - cd ci/docker
     - >
-      FIRST=1; for tag in 20.04 18.04; do
+      FIRST=1; for tag in 22.04 20.04; do
         # fetches the latest image for cache (not failing if image is not found)
         docker pull $IMAGE:$tag || true
         docker build --pull --cache-from $IMAGE:$tag -f Dockerfile_$tag -t $IMAGE:$tag .
@@ -90,11 +90,70 @@ source-format:
 ########################################################################
 ### Ubuntu builds
 
+jammy-relwithdebinfo-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  variables:
+    CC: gcc-11
+    CXX: g++-11
+  <<: *prepare_docker_definition
+  <<: *compile_and_test_definition
+
+jammy-gcc12-relwithdebinfo-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  variables:
+    CC: gcc-12
+    CXX: g++-12
+  <<: *prepare_docker_definition
+  <<: *compile_and_test_definition
+
+jammy-gcc12-werror-debug-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  <<: *prepare_docker_definition
+  <<: *compile_and_test_definition
+  variables:
+    ROOTBA_CXXFLAGS: "-Werror"
+    BUILD_TYPE: CiDebug
+
+jammy-gcc12-werror-release-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  <<: *prepare_docker_definition
+  <<: *compile_and_test_definition
+  variables:
+    ROOTBA_CXXFLAGS: "-Werror"
+    BUILD_TYPE: Release
+
+jammy-clang16-werror-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  <<: *prepare_docker_definition
+  <<: *compile_and_test_definition
+  variables:
+    CC: clang-16
+    CXX: clang++-16
+    ROOTBA_CXXFLAGS: "-Werror"
+
+jammy-clang-tidy-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:22.04
+  <<: *prepare_docker_definition
+  variables:
+    CC: clang-16
+    CXX: clang++-16
+  script:
+    - cmake --version
+    - source ./ci/scripts/install-dependencies.sh
+    - time ./scripts/build-external.sh ${BUILD_TYPE}
+    - time ./scripts/build-rootba.sh ${BUILD_TYPE}
+    - cd build && ctest --output-on-failure || true # allow test failure
+    - cd ..
+    - ./scripts/clang-tidy-all.sh
+  allow_failure: true  # TODO: fix clang-tidy errors
+
 focal-relwithdebinfo-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
 
 focal-release-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
   only:
@@ -104,6 +163,7 @@ focal-release-build:
     BUILD_TYPE: Release
 
 focal-debug-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
   only:
@@ -111,33 +171,9 @@ focal-debug-build:
     - ci-test
   variables:
     BUILD_TYPE: CiDebug
-
-focal-werror-debug-build:
-  <<: *prepare_docker_definition
-  <<: *compile_and_test_definition
-  variables:
-    ROOTBA_CXXFLAGS: "-Werror"
-    BUILD_TYPE: CiDebug
-
-focal-werror-release-build:
-  <<: *prepare_docker_definition
-  <<: *compile_and_test_definition
-  variables:
-    ROOTBA_CXXFLAGS: "-Werror"
-    BUILD_TYPE: Release
-
-focal-clang10-werror-build:
-  <<: *prepare_docker_definition
-  <<: *compile_and_test_definition
-  only:
-    - master
-    - ci-test
-  variables:
-    CC: clang-10
-    CXX: clang++-10
-    ROOTBA_CXXFLAGS: "-Werror"
 
 focal-gcc10-werror-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
   only:
@@ -149,6 +185,7 @@ focal-gcc10-werror-build:
     ROOTBA_CXXFLAGS: "-Werror"
 
 focal-asan-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
   only:
@@ -160,6 +197,7 @@ focal-asan-build:
     ASAN_OPTIONS: "detect_leaks=0"
 
 focal-latest-tbb-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   <<: *compile_and_test_definition
   only:
@@ -169,22 +207,18 @@ focal-latest-tbb-build:
     UBUNTU_INSTALL_LATEST_TBB: "1"
     TBB_ROOT: /opt/intel/tbb
 
-bionic-relwithdebinfo-build:
-  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:18.04
-  <<: *prepare_docker_definition
-  <<: *compile_and_test_definition
-
-
 focal-clang-tidy-build:
+  image: $CI_REGISTRY_IMAGE/ubuntu-ci-rootba:20.04
   <<: *prepare_docker_definition
   script:
     - cmake --version
     - source ./ci/scripts/install-dependencies.sh
     - time ./scripts/build-external.sh ${BUILD_TYPE}
     - time ./scripts/build-rootba.sh ${BUILD_TYPE}
-    - cd build && ctest --output-on-failure
+    - cd build && ctest --output-on-failure || true # allow test failure
     - cd ..
     - ./scripts/clang-tidy-all.sh
+  allow_failure: true  # TODO: fix clang-tidy errors
 
 
 ########################################################################
@@ -215,3 +249,18 @@ catalina-brewclang-asan-build:
     BUILD_TYPE: SanitizerRelWithDebInfo
 # don't activate leak sanitizer; seems to give false positives in system libs...
 #    ASAN_OPTIONS: "detect_leaks=1"
+
+bigsur-relwithdebinfo-build:
+  <<: *compile_and_test_definition
+  tags: [macos, "11", x86_64]
+
+monterey-arm-relwithdebinfo-build:
+  <<: *compile_and_test_definition
+  tags: [macos, "12", arm64]
+
+monterey-arm-brewclang-relwithdebinfo-build:
+  <<: *compile_and_test_definition
+  tags: [macos, "12", arm64]
+  variables:
+    CC: /opt/homebrew/opt/llvm/bin/clang
+    CXX: /opt/homebrew/opt/llvm/bin/clang++

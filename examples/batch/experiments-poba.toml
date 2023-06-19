@@ -1,0 +1,358 @@
+########################################################################
+##
+##
+##  experiments-poba.toml
+##
+##
+##  This configuration file serves as input to the
+##  `generate-tables.py` script, which parses log files from batch
+##  runs of `run-all-in.sh` and generates a pdf witg tables and plots
+##  of various metrics as defined below to analyse the results.
+##
+########################################################################
+
+
+
+
+
+########################################################################
+## base config options
+########################################################################
+
+[options]
+
+# The `patterns` below in experiment definitions are relative to
+# `base_path`.  `$config_dir` will be substituted by the folder where
+# this config file resides in.
+base_path = "$config_dir"
+
+# The output path defines where generated plots and exported latex
+# tables are placed.
+output_path = "$config_dir/tables/experiments-poba"
+
+# The loaded logs of experiments are cached in this folder for faster
+# repeated table generation.
+cache_dir = "$config_dir/tables/cache"
+
+# If this is true, the generated pdf contains pages of different sizes
+# to fit the results in each section. Otherwise, a regular PDF with A4
+# pages in generated.
+screenread = true
+
+# Uncomment the following to force re-loading of logs and ignoring the
+# cache. Alternatively, you can just delete the cache folder.
+#overwrite_cache = true
+
+# You can optionally import experiment definitions from another config
+# file.
+#import_experiments = ["$config_dir/experiments.toml"]
+
+
+########################################################################
+## experiment definition
+########################################################################
+
+# Here we define the different experiments for which we want to load
+# logs. One experiment is a particular solver configuration run on a
+# set of sequences (each sequence may appear at most once in the same
+# experiment). The `name` is used to refer to the experiment later in
+# this config file. The `display_name` is shown in generated table
+# headers and plot labels. The `pattern` defines a "glob" pattern that
+# matches all folders which should be searched for logs. This is
+# relative to the `base_path` defined above.
+
+[[experiments]]
+name = "qr_float"
+display_name = "$\\sqrt{BA}$-32"
+pattern = "cvpr_poba/*/1_*/*rootbaqr_float_*"
+
+[[experiments]]
+name = "qr_double"
+display_name = "$\\sqrt{BA}$-64"
+pattern = "cvpr_poba/*/1_*/*rootbaqr_double_*"
+
+[[experiments]]
+name = "ceres_explicit"
+display_name = "ceres-explicit"
+pattern = "cvpr_poba/*/2_*/*ceres_explicitsc*"
+
+[[experiments]]
+name = "ceres_implicit"
+display_name = "ceres-implicit"
+pattern = "cvpr_poba/*/2_*/*ceres_implicitsc*"
+
+[[experiments]]
+name = "power_float"
+display_name = "PoBA-32"
+pattern = "cvpr_poba/*/3_*/*rootbapower_*float*"
+
+[[experiments]]
+name = "power_double"
+display_name = "PoBA-64"
+pattern = "cvpr_poba/*/3_*/*rootbapower_*double*"
+
+[[experiments]]
+name = "power_precond_float"
+display_name = "SC-PoBA-precond-32"
+pattern = "cvpr_poba/*/4_*/*rootbasc_powersc_float*"
+
+[[experiments]]
+name = "power_precond_double"
+display_name = "SC-PoBA-precond-64"
+pattern = "cvpr_poba/*/4_*/*rootbasc_powersc_double*"
+
+
+########################################################################
+## substitutions
+########################################################################
+
+# Substitutions allow to reuse the same config elements below in the
+# results definitions to avoid duplicating the same information many
+# times, for example the list of experiments we want to include or
+# certain global parameters.
+#
+# There are two ways in which the substitutions can be referred
+# to. For a substitution FOOBAR, you can use the string "<FOOBAR>" and
+# the entire string will be replaced by the value of FOOBAR. In
+# particular, the result is not neccessarily a string, but may be for
+# example a list. Additionally, you can do in-string substitution such
+# as "... some text ${FOOBAR} ..." and the value will be formatted
+# into the string. This can be useful e.g. for figure titles.
+#
+# For convenience, you can define multiple [[substitutions]]
+# tables. All entries will be merged.
+
+[[substitutions]]
+EXPERIMENTS = [
+    "power_float",
+    "power_double",
+    "qr_float",
+    "qr_double",
+    "ceres_explicit",
+    "ceres_implicit",
+    "power_precond_float",
+    "power_precond_double"
+]
+RELATIVE_TO_EXPERIMENT = "ceres_explicit"
+
+[[substitutions]]
+TOLERANCES = [1e-1, 1e-2, 3e-3, 1e-3]
+YLIM_TOLERANCE_TOP = 1.75
+YLIM_TOLERANCE_BOTTOM = -0.1
+
+
+################################################################################
+## results
+################################################################################
+
+# 'results' is a list of toml tables that define 'sections' (== pages
+# in 'screenread' mode), latex tables or plots, i.e. what evaluations
+# you want in the resulting pdf.
+#
+# Each item has a 'show' parameter that allows to quickly exclude it
+# from the generated pdf. Excluding a section also excludes all
+# contained tables and plots.
+
+
+################################################################################
+
+
+######################################################################
+# PERFORMANCE PROFILES show percentage of problems solved to a given
+# accuracy vs relative runtime. The accuracy thresholds are determined
+# as "fraction of cost reduced" in the interval of "initial cost" to
+# "best final cost achieved by any solver". Relative runtime is the
+# time needed to achieve the given accuracy threshold relative to the
+# fastest solver on that sequence (i.e. the best solver for each
+# sequence has relative runtime 1).  Performance profiles are a great
+# way to show the runtime / accurcay tradeoff of different solvers
+# across a range of different problems with different orders of
+# magnitude in problem size.
+######################################################################
+
+[[results]]
+show = true
+class = "plot"
+type = "performance_profile"
+name = "BAL problems"
+#filter_regex = "trafalgar|dubrovnik|venice|final"
+reverse_zorder = true
+experiments = "<EXPERIMENTS>"
+tolerances = "<TOLERANCES>"
+xlimits.right = [8,5,8,5]
+
+
+######################################################################
+# CONVERGENCE PLOTS show cost vs time (cost_time), cost vs iterations
+# (cost_it), trust-region-radius vs iterations (tr_radius),
+# inner-iterations vs iterations (inner_it) or memory vs iterations
+# (memory).
+######################################################################
+
+# ladybug1197
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -0.04
+xlim_time.right = 12.0
+reverse_zorder = true
+title = "ladybug1197"
+sequence = "ladybug1197"
+experiments = "<EXPERIMENTS>"
+
+# venice1102
+[[results]]
+show = true
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+bal_cost_include = ["cost_time"]
+figsize = [3.2, 2.7]
+ylabel = false
+plot_cost_semilogy = true
+ylim_tolerance.bottom = "<YLIM_TOLERANCE_BOTTOM>"
+ylim_tolerance.top = "<YLIM_TOLERANCE_TOP>"
+xlim_time.left = -0.04
+xlim_time.right = 35.0
+reverse_zorder = true
+title = "venice1102"
+sequence = "venice1102"
+experiments = "<EXPERIMENTS>"
+
+
+
+######################################################################
+# MEMORY PLOTS show peak memory vs problem size
+######################################################################
+
+[[results]]
+show = true
+class = "plot"
+type = "memory"
+#legend_loc = false
+problem_size_variants = ["obs"]
+figsize = [5,3]
+best_fit_line = false
+reverse_zorder = true
+name = "BAL problems"
+# filter_regex = "ladybug"
+experiments = "<EXPERIMENTS>"
+
+
+################################################################################
+################################################################################
+[[results]]
+class = "section"
+name = "BAL problem info table"
+pagewidth = "30cm"
+show = true
+
+
+######################################################################
+# OVERVIEW TABLES show some static info about the problems (sequences)
+# such as number of cameras, landmarks, observations etc. It is
+# independent of the solver, as all properties are computed on the
+# initialization.
+######################################################################
+
+[[results]]
+class = "overview_table"
+name = "Problem size"
+export_latex = "problem_size"
+columns = [
+   { name = "<RELATIVE_TO_EXPERIMENT>", metrics = ["#cam", "#lm", "#obs", "#obs-per-cam", "#obs-per-lm-mean", "#obs-per-lm-stddev", "#obs-per-lm-max"] },
+]
+
+
+######################################################################
+# The following visualizations enable in-depth analysis of the solvers
+# convergence speed and runtime performance. They are disabled by
+# default as they can make the visualizations very lengthy, you can
+# enable the visualization by setting "show = true", and update 
+# BAL_SEQUENCES to include the sequences shown in the visualizations.
+#
+# CONVERGENCE shows the detailed cost changes during the optimization,
+# while RUNTIME_BAR_PLOT shows the runtime spent in different
+# optimization stages.
+######################################################################
+[[results]]
+class = "section"
+name = "convergence plots for all sequences"
+show = false
+
+[[substitutions]]
+BAL_SEQUENCES =  ["ladybug49", "ladybug73", "ladybug138", "ladybug318", "ladybug372", "ladybug412", "ladybug460", "ladybug539", "ladybug598", "ladybug646", "ladybug707", "ladybug783", "ladybug810", "ladybug856", "ladybug885", "ladybug931", "ladybug969", "ladybug1064", "ladybug1118", "ladybug1152", "ladybug1197", "ladybug1235", "ladybug1266", "ladybug1340", "ladybug1469", "ladybug1514", "ladybug1587", "ladybug1642", "ladybug1695", "ladybug1723","trafalgar21", "trafalgar39", "trafalgar50", "trafalgar126", "trafalgar138", "trafalgar161", "trafalgar170", "trafalgar174", "trafalgar193", "trafalgar201", "trafalgar206", "trafalgar215", "trafalgar225", "trafalgar257","venice52", "venice89", "venice245", "venice427", "venice744", "venice951", "venice1102", "venice1158", "venice1184", "venice1238", "venice1288", "venice1350", "venice1408", "venice1425", "venice1473", "venice1490", "venice1521", "venice1544", "venice1638", "venice1666", "venice1672", "venice1681", "venice1682", "venice1684", "venice1695", "venice1696", "venice1706", "venice1776", "venice1778", "final93", "final394", "final871", "final961", "final1936", "final3068", "final4585", "final13682"]
+
+######################################################################
+# TEMPLATES define a list of arguments and allow advanced
+# substitutions to generate multiple plots or tables at the same
+# time.
+######################################################################
+
+[[templates]]
+_name = "CONVERGENCE"
+_arguments = ["SEQUENCE"]
+class = "plot"
+name = "convergence"
+type = "bal_cost"
+sequence = "<SEQUENCE>"
+experiments = "<EXPERIMENTS>"
+plot_tolerances = true
+tolerances = "<TOLERANCES>"
+#bal_cost_include = ["cost_time"]
+plot_cost_semilogy = true
+ylim_tolerance.bottom = -0.1
+ylim_tolerance.top = 1.75
+xlim_time_fastest.right = 1
+xlim_time_fastest.left = -0.02
+reverse_zorder = true
+#figsize = [16.0, 2.7]  # <-- this is good with no "suptitle"
+figsize = [16.0, 3.0]
+suptitle = "${SEQUENCE}"
+
+
+[[results]]
+  [results._template]
+  _name = "CONVERGENCE"
+  SEQUENCE = {_argument = "product", _value = "<BAL_SEQUENCES>"}
+
+######################################################################
+# RUNTIME BAR PLOT show the runtime details and the number of inner
+# iterations for each sequence given a tolerance. A stacked bar
+# indicates the total runtime spent on each optimization stage. For a
+# definition ofthe stages, see plot.py L218-228. The number of inner
+# iterations per outer iteration is shown to the right of the stacked
+# bar, with each outer iteration being separated by a tiny gap.
+######################################################################
+
+[[results]]
+class = "section"
+name = "Runtime bar plot for all sequences"
+show = false
+
+[[templates]]
+_name = "RUNTIME_BAR_PLOT"
+_arguments = ["SEQUENCE"]
+class = "plot"
+name = "runtime_bar_plot"
+type = "bal_bar"
+sequence = "<SEQUENCE>"
+experiments = "<EXPERIMENTS>"
+bal_bar_tolerances = [0.01]
+
+[[results]]
+  [results._template]
+  _name = "RUNTIME_BAR_PLOT"
+  SEQUENCE = {_argument = "product", _value = "<BAL_SEQUENCES>"}

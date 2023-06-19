@@ -4,7 +4,7 @@ BSD 3-Clause License
 This file is part of the RootBA project.
 https://github.com/NikolausDemmel/rootba
 
-Copyright (c) 2021, Nikolaus Demmel.
+Copyright (c) 2021-2023, Nikolaus Demmel.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,7 @@ void log_summary(BaLog::ProblemInfo& log, const DatasetSummary& summary) {
   log.num_cameras = summary.num_cameras;
   log.num_landmarks = summary.num_landmarks;
   log.num_observations = summary.num_observations;
+  log.rcs_sparsity = summary.rcs_sparsity;
 
   log_stats(log.per_lm_obs, summary.per_lm_obs);
   log_stats(log.per_host_lms, summary.per_host_lms);
@@ -139,6 +140,7 @@ void log_summary(BaLog::BaIteration& log, const BaLog::BaIteration* prev_it,
 
   log.trust_region_radius = summary.trust_region_radius;
   log.linear_solver_iterations = summary.linear_solver_iterations;
+  log.linear_solver_type = summary.linear_solver_type;
   log.iteration_time = summary.iteration_time_in_seconds;
   log.cumulative_time = summary.cumulative_time_in_seconds;
   log.logging_time = summary.logging_time_in_seconds;
@@ -155,8 +157,10 @@ void log_summary(BaLog::BaIteration& log, const BaLog::BaIteration* prev_it,
       summary.compute_preconditioner_time_in_seconds;
   log.compute_gradient_time = summary.compute_gradient_time_in_seconds;
   log.stage2_time = summary.stage2_time_in_seconds;
+  log.prepare_time = summary.prepare_time_in_seconds;
   log.solve_reduced_system_time = summary.solve_reduced_system_time_in_seconds;
   log.back_substitution_time = summary.back_substitution_time_in_seconds;
+  log.update_cameras_time = summary.update_cameras_time_in_seconds;
   log.resident_memory = summary.resident_memory;
   log.resident_memory_peak = summary.resident_memory_peak;
 }
