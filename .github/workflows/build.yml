@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os_version: [20.04]
+        os_version: [22.04]
         build_type: [CiRelWithDebInfo]
       fail-fast: false
     container:
@@ -17,13 +17,17 @@ jobs:
       CXX_MARCH: sandybridge
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ubuntu-${{ matrix.os_version }}-${{ matrix.build_type }}
+      - name: git config workaround
+        # workaround for https://github.com/actions/runner-images/issues/6775#issuecomment-1410627843
+        shell: bash
+        run: git config --system --add safe.directory "*"
       - name: install dependencies
         shell: bash
         run: |
@@ -44,16 +48,16 @@ jobs:
     runs-on: macos-${{ matrix.os_version }}
     strategy:
       matrix:
-        os_version: [10.15]
+        os_version: [13]
         build_type: [CiRelWithDebInfo]
       fail-fast: false
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: macos-${{ matrix.os_version }}-${{ matrix.build_type }}
       - name: install dependencies
@@ -75,10 +79,10 @@ jobs:
     name: check source format
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba:20.04
+      image: ghcr.io/nikolausdemmel/rootba/ubuntu-ci-rootba:22.04
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: check source format
         shell: bash
         run: |
