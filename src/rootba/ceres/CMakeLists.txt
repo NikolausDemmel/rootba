@@ -19,6 +19,8 @@ target_sources(rootba_ceres
 
 # include order: ceres first; ensure ceres is found first in the specified location, not in /usr/local (on macOS with homebrew)
 target_link_libraries(rootba_ceres PUBLIC Ceres::ceres)
+# add_subdirectory(g2o)
+# target_link_libraries(rootba_ceres PUBLIC g2o)
 
 target_link_libraries(rootba_ceres
   PUBLIC

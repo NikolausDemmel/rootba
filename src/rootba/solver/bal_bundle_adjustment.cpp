@@ -288,7 +288,7 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
   bool terminated = false;
 
-  for (int it = 0; it <= max_lm_iter && !terminated;) {
+  for (int it = 0; it <= max_lm_iter && !terminated && !bal_problem.terminate();) {
     IterationSummary it_summary;
     it_summary.iteration = it;
     linearizor->start_iteration(&it_summary);
@@ -300,9 +300,9 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
     ResidualInfo ri;
     linearizor->compute_error(ri);
 
-    std::cout << "Iteration {}, {}\n"_format(
-        it, error_summary_oneline(
-                ri, solver_options.use_projection_validity_check()));
+    // std::cout << "Iteration {}, {}\n"_format(
+    //     it, error_summary_oneline(
+    //             ri, solver_options.use_projection_validity_check()));
 
     CHECK(ri.is_numerically_valid)
         << "did not expect numerical failure during linearization";
@@ -323,15 +323,15 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
     linearizor->linearize();
 
-    std::cout << "\t[INFO] Stage 1 time {:.3f}s.\n"_format(
-        it_summary.stage1_time_in_seconds);
+    // std::cout << "\t[INFO] Stage 1 time {:.3f}s.\n"_format(
+    //     it_summary.stage1_time_in_seconds);
 
     // Don't limit inner lm iterations (to be in line with ceres)
     constexpr int MAX_INNER_IT = std::numeric_limits<int>::max();
 
-    for (int j = 0; j < MAX_INNER_IT && it <= max_lm_iter && !terminated; j++) {
+    for (int j = 0; j < MAX_INNER_IT && it <= max_lm_iter && !terminated && !bal_problem.terminate(); j++) {
       if (j > 0) {
-        std::cout << "Iteration {}, backtracking\n"_format(it);
+        // std::cout << "Iteration {}, backtracking\n"_format(it);
 
         it_summary = IterationSummary();
         it_summary.iteration = it;
@@ -343,15 +343,15 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
       // dampen and solve linear system
       VecX inc = linearizor->solve(lambda);
 
-      std::cout << "\t[INFO] Stage 2 time {:.3f}s.\n"_format(
-          it_summary.stage2_time_in_seconds);
+      // std::cout << "\t[INFO] Stage 2 time {:.3f}s.\n"_format(
+      //     it_summary.stage2_time_in_seconds);
 
-      std::cout << "\t[CG] Summary: {} Time {:.3f}s. Time per iteration "
-                   "{:.3f}s\n"_format(
-                       it_summary.linear_solver_message,
-                       it_summary.solve_reduced_system_time_in_seconds,
-                       it_summary.solve_reduced_system_time_in_seconds /
-                           it_summary.linear_solver_iterations);
+      // std::cout << "\t[CG] Summary: {} Time {:.3f}s. Time per iteration "
+      //              "{:.3f}s\n"_format(
+      //                  it_summary.linear_solver_message,
+      //                  it_summary.solve_reduced_system_time_in_seconds,
+      //                  it_summary.solve_reduced_system_time_in_seconds /
+      //                      it_summary.linear_solver_iterations);
 
       // TODO: cleanly abort linear solver on numerical issue
 
@@ -366,14 +366,14 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
         std::string reason = it_summary.step_is_valid ? "Reject" : "Invalid";
 
-        std::cout
-            << "\t[{}] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
-               "{:.3f}s, total_time: {:.3f}s\n"
-               ""_format(
-                   reason,
-                   "Numeric issues when computing increment (contains NaNs)",
-                   lambda, it_summary.linear_solver_iterations, iteration_time,
-                   cumulative_time);
+        // std::cout
+        //     << "\t[{}] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
+        //        "{:.3f}s, total_time: {:.3f}s\n"
+        //        ""_format(
+        //            reason,
+        //            "Numeric issues when computing increment (contains NaNs)",
+        //            lambda, it_summary.linear_solver_iterations, iteration_time,
+        //            cumulative_time);
 
         lambda = lambda_vee * lambda;
         lambda_vee *= vee_factor;
@@ -414,9 +414,9 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
       } else if (!ri2.is_numerically_valid) {
         it_summary.step_is_valid = false;
         it_summary.step_is_successful = false;
-        std::cout << "\t[EVAL] failed to evaluate cost: {}"_format(
-            error_summary_oneline(
-                ri2, solver_options.use_projection_validity_check()));
+        // std::cout << "\t[EVAL] failed to evaluate cost: {}"_format(
+        //     error_summary_oneline(
+        //         ri2, solver_options.use_projection_validity_check()));
       } else {
         // compute "ri - ri2", depending on 'optimized_cost' config
         Scalar f_diff =
@@ -433,10 +433,10 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
         Scalar step_quality = f_diff / l_diff;
 
-        std::cout << "\t[EVAL] f_diff {:.4e} l_diff {:.4e} "
-                     "step_quality {:.4e} ri1 {:.4e} ri2 {:.4e}\n"
-                     ""_format(f_diff, l_diff, step_quality, ri.valid.error,
-                               ri2.valid.error);
+        // std::cout << "\t[EVAL] f_diff {:.4e} l_diff {:.4e} "
+        //              "step_quality {:.4e} ri1 {:.4e} ri2 {:.4e}\n"
+        //              ""_format(f_diff, l_diff, step_quality, ri.valid.error,
+        //                        ri2.valid.error);
 
         it_summary.relative_decrease = step_quality;
 
@@ -452,12 +452,12 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
         const double iteration_time = timer_iteration.elapsed();
         const double cumulative_time = timer_total.elapsed();
 
-        std::cout << "\t[Success] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
-                     "{:.3f}s, total_time: {:.3f}s\n"
-                     ""_format(format_new_error_info(
-                                   ri2, solver_options.optimized_cost),
-                               lambda, it_summary.linear_solver_iterations,
-                               iteration_time, cumulative_time);
+        // std::cout << "\t[Success] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
+        //              "{:.3f}s, total_time: {:.3f}s\n"
+        //              ""_format(format_new_error_info(
+        //                            ri2, solver_options.optimized_cost),
+        //                        lambda, it_summary.linear_solver_iterations,
+        //                        iteration_time, cumulative_time);
 
         lambda *= Scalar(std::max(
             1.0 / 3, 1 - std::pow(2 * it_summary.relative_decrease - 1, 3)));
@@ -488,13 +488,13 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
         std::string reason = it_summary.step_is_valid ? "Reject" : "Invalid";
 
-        std::cout << "\t[{}] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
-                     "{:.3f}s, total_time: {:.3f}s\n"
-                     ""_format(reason,
-                               format_new_error_info(
-                                   ri2, solver_options.optimized_cost),
-                               lambda, it_summary.linear_solver_iterations,
-                               iteration_time, cumulative_time);
+        // std::cout << "\t[{}] {}, lambda: {:.1e}, cg_iter: {}, it_time: "
+        //              "{:.3f}s, total_time: {:.3f}s\n"
+        //              ""_format(reason,
+        //                        format_new_error_info(
+        //                            ri2, solver_options.optimized_cost),
+        //                        lambda, it_summary.linear_solver_iterations,
+        //                        iteration_time, cumulative_time);
 
         lambda = lambda_vee * lambda;
         lambda_vee *= vee_factor;
@@ -536,10 +536,12 @@ void optimize_lm_ours(BalProblem<Scalar>& bal_problem,
 
   finish_solve(summary, solver_options);
 
-  std::cout << "Final Cost: {}\n"_format(error_summary_oneline(
-      summary.final_cost, solver_options.use_projection_validity_check()));
-  std::cout << "{}: {}\n"_format(
-      magic_enum::enum_name(summary.termination_type), summary.message);
+  // std::cout << "Final Cost: {}\n"_format(error_summary_oneline(
+  //     summary.final_cost, solver_options.use_projection_validity_check()));
+  // std::cout << "{}: {}\n"_format(
+  //     magic_enum::enum_name(summary.termination_type), summary.message);
+  const double opt_time = timer_total.elapsed();
+  std::cout << "total time is:" << opt_time*1000 << std::endl;
   std::cout.flush();
 }
 
@@ -558,7 +560,7 @@ void bundle_adjust_manual(BalProblem<Scalar>& bal_problem,
         solver_summary->total_time_in_seconds;
   }
 
-  LOG(INFO) << solver_summary->message;
+  // LOG(INFO) << solver_summary->message;
 
   // TODO: Print summary similar to ceres: oneline, or full
 }

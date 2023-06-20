@@ -12,7 +12,7 @@ ba_log.ubjson
 __pycache__
 /*.cereal
 /rootba_config.toml
-
+.vscode
 # generic:
 .DS_Store
 *~
